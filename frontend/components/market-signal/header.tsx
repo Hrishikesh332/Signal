@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Globe2, Radio, LayoutDashboard, Target } from "lucide-react"
+import { Globe2, Radio, LayoutDashboard, Users2 } from "lucide-react"
 
 export function Header() {
   const pathname = usePathname()
@@ -13,9 +13,9 @@ export function Header() {
     setIsHydrated(true)
   }, [])
 
+  const isCompetitors = isHydrated && pathname === "/competitors"
   const isDashboard = isHydrated && pathname === "/dashboard"
   const isLatest = isHydrated && (pathname === "/latest" || pathname === "/")
-  const isViability = isHydrated && pathname === "/product-viability"
 
   return (
     <header className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-6 h-14 bg-[#09090b]/80 backdrop-blur-md border-b border-[#27272a]/50">
@@ -39,6 +39,17 @@ export function Header() {
           Dashboard
         </Link>
         <Link
+          href="/competitors"
+          className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium tracking-wide transition-all duration-200 rounded-full ${
+            isCompetitors
+              ? "bg-white text-black shadow-lg"
+              : "text-[#a1a1aa] hover:text-white"
+          }`}
+        >
+          <Users2 className="w-3.5 h-3.5" />
+          Competitors
+        </Link>
+        <Link
           href="/latest"
           className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium tracking-wide transition-all duration-200 rounded-full ${
             isLatest
@@ -48,17 +59,6 @@ export function Header() {
         >
           <Radio className="w-3.5 h-3.5" />
           Latest
-        </Link>
-        <Link
-          href="/product-viability"
-          className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium tracking-wide transition-all duration-200 rounded-full ${
-            isViability
-              ? "bg-white text-black shadow-lg"
-              : "text-[#a1a1aa] hover:text-white"
-          }`}
-        >
-          <Target className="w-3.5 h-3.5" />
-          Viability
         </Link>
       </nav>
     </header>

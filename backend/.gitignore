@@ -38,8 +38,5 @@ coverage.xml
 instance/
 .webassets-cache
 
-# Generated snapshot data
-data/snapshots/
-
 # API / endpoint verification outputs
 data/verification/

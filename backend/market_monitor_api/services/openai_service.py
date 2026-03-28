@@ -1079,3 +1079,378 @@ def build_cross_category_response_schema() -> dict:
             }
         },
     }
+
+
+def build_competitor_candidate_map(
+    target_profile: dict,
+    market_context: dict,
+    settings: Settings,
+    candidate_limit: int,
+) -> list[dict]:
+    if not settings.openai_configured:
+        return []
+    payload = build_competitor_candidate_request_payload(target_profile, market_context, settings, candidate_limit)
+    request = Request(
+        f"{settings.openai_base_url.rstrip('/')}/responses",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {settings.openai_api_key}",
+        },
+        method="POST",
+    )
+    try:
+        with urlopen(request, timeout=settings.openai_timeout_seconds) as response:
+            response_payload = json.loads(response.read().decode("utf-8"))
+    except HTTPError:
+        return []
+    except (TimeoutError, socket.timeout):
+        return []
+    except URLError:
+        return []
+    output_text = extract_openai_output_text(response_payload)
+    if not output_text:
+        return []
+    try:
+        analysis_payload = json.loads(output_text)
+    except json.JSONDecodeError:
+        return []
+    competitors = []
+    seen = set()
+    for item in analysis_payload.get("competitors", []):
+        if not isinstance(item, dict):
+            continue
+        company_name = item.get("company_name")
+        homepage_url = item.get("homepage_url")
+        fit_score = item.get("fit_score")
+        confidence_score = item.get("confidence_score")
+        reasoning = item.get("reasoning")
+        overlap_areas = item.get("overlap_areas")
+        if not isinstance(company_name, str) or not company_name.strip():
+            continue
+        if not isinstance(homepage_url, str) or not homepage_url.strip():
+            continue
+        if not isinstance(fit_score, (int, float)) or isinstance(fit_score, bool):
+            continue
+        if not isinstance(confidence_score, (int, float)) or isinstance(confidence_score, bool):
+            continue
+        if not isinstance(reasoning, str) or not reasoning.strip():
+            continue
+        if not isinstance(overlap_areas, list):
+            overlap_areas = []
+        key = homepage_url.strip().lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        competitors.append(
+            {
+                "company_name": company_name.strip(),
+                "homepage_url": homepage_url.strip(),
+                "fit_score": max(0, min(100, int(round(float(fit_score))))),
+                "confidence_score": round(max(0.0, min(1.0, float(confidence_score))), 3),
+                "reasoning": reasoning.strip(),
+                "overlap_areas": [value.strip() for value in overlap_areas if isinstance(value, str) and value.strip()][:6],
+            }
+        )
+    return sorted(competitors, key=lambda item: (item["fit_score"], item["confidence_score"]), reverse=True)
+
+
+def build_competitor_candidate_request_payload(
+    target_profile: dict,
+    market_context: dict,
+    settings: Settings,
+    candidate_limit: int,
+) -> dict:
+    return {
+        "model": settings.openai_model,
+        "input": [
+            {
+                "role": "developer",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": (
+                            "You identify direct competitors for a target company. "
+                            "Use the supplied company profile and market context. "
+                            "Return only real public companies with public homepage URLs. "
+                            "Prefer direct product-market competitors over broad adjacent companies. "
+                            "Return only JSON that matches the provided schema."
+                        ),
+                    }
+                ],
+            },
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": json.dumps(
+                            {
+                                "target_company": target_profile,
+                                "market_context": market_context,
+                                "requested_competitor_count": candidate_limit,
+                            },
+                            separators=(",", ":"),
+                            ensure_ascii=True,
+                        ),
+                    }
+                ],
+            },
+        ],
+        "text": {
+            "format": {
+                "type": "json_schema",
+                "name": "market_monitor_competitor_candidates",
+                "schema": build_competitor_candidate_response_schema(),
+            }
+        },
+    }
+
+
+def build_competitor_candidate_response_schema() -> dict:
+    return {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["competitors"],
+        "properties": {
+            "competitors": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": [
+                        "company_name",
+                        "homepage_url",
+                        "fit_score",
+                        "confidence_score",
+                        "reasoning",
+                        "overlap_areas",
+                    ],
+                    "properties": {
+                        "company_name": {"type": "string"},
+                        "homepage_url": {"type": "string"},
+                        "fit_score": {"type": "number"},
+                        "confidence_score": {"type": "number"},
+                        "reasoning": {"type": "string"},
+                        "overlap_areas": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                        },
+                    },
+                },
+            }
+        },
+    }
+
+
+def build_competitor_landscape_analysis(
+    target_profile: dict,
+    competitors: list[dict],
+    market_context: dict,
+    settings: Settings,
+    top_n: int,
+) -> dict:
+    if not settings.openai_configured or not competitors:
+        return {}
+    payload = build_competitor_landscape_request_payload(target_profile, competitors, market_context, settings, top_n)
+    request = Request(
+        f"{settings.openai_base_url.rstrip('/')}/responses",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {settings.openai_api_key}",
+        },
+        method="POST",
+    )
+    try:
+        with urlopen(request, timeout=settings.openai_timeout_seconds) as response:
+            response_payload = json.loads(response.read().decode("utf-8"))
+    except HTTPError:
+        return {}
+    except (TimeoutError, socket.timeout):
+        return {}
+    except URLError:
+        return {}
+    output_text = extract_openai_output_text(response_payload)
+    if not output_text:
+        return {}
+    try:
+        analysis_payload = json.loads(output_text)
+    except json.JSONDecodeError:
+        return {}
+    summary = analysis_payload.get("summary")
+    confidence_score = analysis_payload.get("confidence_score")
+    if not isinstance(summary, str) or not summary.strip():
+        summary = None
+    if not isinstance(confidence_score, (int, float)) or isinstance(confidence_score, bool):
+        confidence_score = None
+    competitors_payload = []
+    for item in analysis_payload.get("competitors", []):
+        if not isinstance(item, dict):
+            continue
+        competitor_name = item.get("competitor_name")
+        competitor_url = item.get("competitor_url")
+        fit_score = item.get("fit_score")
+        reasoning = item.get("reasoning")
+        competitor_confidence = item.get("confidence_score")
+        strengths = item.get("strengths")
+        pain_points = item.get("pain_points")
+        score_breakdown = item.get("score_breakdown")
+        if not isinstance(competitor_name, str) or not competitor_name.strip():
+            continue
+        if not isinstance(competitor_url, str) or not competitor_url.strip():
+            continue
+        if not isinstance(fit_score, (int, float)) or isinstance(fit_score, bool):
+            continue
+        if not isinstance(reasoning, str) or not reasoning.strip():
+            continue
+        if not isinstance(competitor_confidence, (int, float)) or isinstance(competitor_confidence, bool):
+            continue
+        if not isinstance(strengths, list) or not isinstance(pain_points, list) or not isinstance(score_breakdown, dict):
+            continue
+        competitors_payload.append(
+            {
+                "competitor_name": competitor_name.strip(),
+                "competitor_url": competitor_url.strip(),
+                "fit_score": max(0, min(100, int(round(float(fit_score))))),
+                "confidence_score": round(max(0.0, min(1.0, float(competitor_confidence))), 3),
+                "reasoning": reasoning.strip(),
+                "strengths": strengths,
+                "pain_points": pain_points,
+                "score_breakdown": score_breakdown,
+            }
+        )
+    return {
+        "summary": summary,
+        "confidence_score": round(max(0.0, min(1.0, float(confidence_score))), 3) if confidence_score is not None else None,
+        "competitors": competitors_payload[:top_n],
+    }
+
+
+def build_competitor_landscape_request_payload(
+    target_profile: dict,
+    competitors: list[dict],
+    market_context: dict,
+    settings: Settings,
+    top_n: int,
+) -> dict:
+    return {
+        "model": settings.openai_model,
+        "input": [
+            {
+                "role": "developer",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": (
+                            "You are building a competitor analysis for one target company. "
+                            "Use only the supplied target profile, verified competitor profiles, and market signals. "
+                            "Return only JSON that matches the schema. "
+                            "For each competitor provide concise reasoning, strengths, pain points, and a defined score."
+                        ),
+                    }
+                ],
+            },
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": json.dumps(
+                            {
+                                "target_company": target_profile,
+                                "verified_competitors": competitors[:top_n],
+                                "market_context": market_context,
+                                "requested_competitor_count": top_n,
+                            },
+                            separators=(",", ":"),
+                            ensure_ascii=True,
+                        ),
+                    }
+                ],
+            },
+        ],
+        "text": {
+            "format": {
+                "type": "json_schema",
+                "name": "market_monitor_competitor_landscape",
+                "schema": build_competitor_landscape_response_schema(),
+            }
+        },
+    }
+
+
+def build_competitor_landscape_response_schema() -> dict:
+    return {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["summary", "confidence_score", "competitors"],
+        "properties": {
+            "summary": {"type": "string"},
+            "confidence_score": {"type": "number"},
+            "competitors": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": [
+                        "competitor_name",
+                        "competitor_url",
+                        "fit_score",
+                        "confidence_score",
+                        "reasoning",
+                        "strengths",
+                        "pain_points",
+                        "score_breakdown",
+                    ],
+                    "properties": {
+                        "competitor_name": {"type": "string"},
+                        "competitor_url": {"type": "string"},
+                        "fit_score": {"type": "number"},
+                        "confidence_score": {"type": "number"},
+                        "reasoning": {"type": "string"},
+                        "strengths": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": False,
+                                "required": ["title", "reasoning"],
+                                "properties": {
+                                    "title": {"type": "string"},
+                                    "reasoning": {"type": "string"},
+                                },
+                            },
+                        },
+                        "pain_points": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": False,
+                                "required": ["title", "reasoning"],
+                                "properties": {
+                                    "title": {"type": "string"},
+                                    "reasoning": {"type": "string"},
+                                },
+                            },
+                        },
+                        "score_breakdown": {
+                            "type": "object",
+                            "additionalProperties": False,
+                            "required": [
+                                "product_overlap",
+                                "audience_overlap",
+                                "market_momentum",
+                                "differentiation_gap",
+                            ],
+                            "properties": {
+                                "product_overlap": {"type": "number"},
+                                "audience_overlap": {"type": "number"},
+                                "market_momentum": {"type": "number"},
+                                "differentiation_gap": {"type": "number"},
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    }

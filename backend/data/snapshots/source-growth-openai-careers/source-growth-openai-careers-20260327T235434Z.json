@@ -1,0 +1,148 @@
+{
+  "snapshot_id": "source-growth-openai-careers-20260327T235434Z",
+  "captured_at": "2026-03-27T23:54:34Z",
+  "capture_status": "FAILED",
+  "source_id": "source-growth-openai-careers",
+  "source_name": "OpenAI Careers Search",
+  "category": "growth_intelligence",
+  "company_id": "company-openai",
+  "company_name": "OpenAI",
+  "product_id": null,
+  "product_name": null,
+  "target_url": "https://openai.com/careers/search/",
+  "goal": "Visit the public OpenAI careers search page and extract current hiring signals. Capture up to 50 visible open roles. For each role, return signal_type as hiring_opening, plus title, team, location, and evidence_url. Set metrics.growth to the total number of roles captured. Include map_points only when the page text provides enough explicit location context to confidently provide latitude and longitude. If location coordinates are not reliable from the page, return an empty map_points array.",
+  "goal_prompt": "Visit the public OpenAI careers search page and extract current hiring signals. Capture up to 50 visible open roles. For each role, return signal_type as hiring_opening, plus title, team, location, and evidence_url. Set metrics.growth to the total number of roles captured. Include map_points only when the page text provides enough explicit location context to confidently provide latitude and longitude. If location coordinates are not reliable from the page, return an empty map_points array.\n\nReturn only structured JSON that matches this schema exactly:\n{\"type\":\"object\",\"required\":[\"captured_at\",\"company\",\"signals\",\"metrics\",\"map_points\"],\"properties\":{\"captured_at\":{\"type\":\"string\"},\"company\":{\"type\":\"string\"},\"signals\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"required\":[\"signal_type\",\"title\",\"team\",\"location\",\"evidence_url\"],\"properties\":{\"signal_type\":{\"type\":\"string\"},\"title\":{\"type\":\"string\"},\"team\":{\"type\":\"string\"},\"location\":{\"type\":\"string\"},\"evidence_url\":{\"type\":\"string\"}}}},\"metrics\":{\"type\":\"object\",\"required\":[\"growth\"],\"properties\":{\"growth\":{\"type\":\"number\"}}},\"map_points\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"required\":[\"latitude\",\"longitude\",\"entity_name\",\"signal_type\",\"severity\",\"timestamp\",\"explanation\"],\"properties\":{\"latitude\":{\"type\":\"number\"},\"longitude\":{\"type\":\"number\"},\"entity_name\":{\"type\":\"string\"},\"signal_type\":{\"type\":\"string\"},\"severity\":{\"type\":\"string\"},\"timestamp\":{\"type\":\"string\"},\"explanation\":{\"type\":\"string\"},\"cluster_key\":{\"type\":\"string\"}}}}}}\n\nStop conditions:\n[\"Stop after up to 50 visible roles are extracted.\",\"Stop when pagination or infinite scroll yields no new roles.\",\"Stop after two consecutive page load failures.\"]\n\nStructured error handling rules:\n{\"timeout\":{\"action\":\"retry\",\"max_retries\":2,\"emit_status\":\"failed\"},\"layout_changed\":{\"action\":\"return_partial_result\",\"emit_status\":\"failed\"},\"schema_validation_failed\":{\"action\":\"store_raw_payload\",\"emit_status\":\"validation_error\"}}",
+  "output_schema": {
+    "type": "object",
+    "required": [
+      "captured_at",
+      "company",
+      "signals",
+      "metrics",
+      "map_points"
+    ],
+    "properties": {
+      "captured_at": {
+        "type": "string"
+      },
+      "company": {
+        "type": "string"
+      },
+      "signals": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "signal_type",
+            "title",
+            "team",
+            "location",
+            "evidence_url"
+          ],
+          "properties": {
+            "signal_type": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "team": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string"
+            },
+            "evidence_url": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "metrics": {
+        "type": "object",
+        "required": [
+          "growth"
+        ],
+        "properties": {
+          "growth": {
+            "type": "number"
+          }
+        }
+      },
+      "map_points": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "latitude",
+            "longitude",
+            "entity_name",
+            "signal_type",
+            "severity",
+            "timestamp",
+            "explanation"
+          ],
+          "properties": {
+            "latitude": {
+              "type": "number"
+            },
+            "longitude": {
+              "type": "number"
+            },
+            "entity_name": {
+              "type": "string"
+            },
+            "signal_type": {
+              "type": "string"
+            },
+            "severity": {
+              "type": "string"
+            },
+            "timestamp": {
+              "type": "string"
+            },
+            "explanation": {
+              "type": "string"
+            },
+            "cluster_key": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  "stop_conditions": [
+    "Stop after up to 50 visible roles are extracted.",
+    "Stop when pagination or infinite scroll yields no new roles.",
+    "Stop after two consecutive page load failures."
+  ],
+  "error_handling": {
+    "timeout": {
+      "action": "retry",
+      "max_retries": 2,
+      "emit_status": "failed"
+    },
+    "layout_changed": {
+      "action": "return_partial_result",
+      "emit_status": "failed"
+    },
+    "schema_validation_failed": {
+      "action": "store_raw_payload",
+      "emit_status": "validation_error"
+    }
+  },
+  "run": {
+    "run_id": null,
+    "status": "FAILED",
+    "started_at": "2026-03-27T23:54:34Z",
+    "finished_at": "2026-03-27T23:54:34Z",
+    "num_of_steps": null,
+    "error": {
+      "code": "timeout",
+      "message": "The read operation timed out"
+    }
+  },
+  "result": null,
+  "validation_errors": []
+}

@@ -1,0 +1,224 @@
+{
+  "snapshot_id": "source-growth-openai-careers-20260328T024434Z",
+  "captured_at": "2026-03-28T02:44:34Z",
+  "capture_status": "FAILED",
+  "source_id": "source-growth-openai-careers",
+  "source_name": "OpenAI Careers Search",
+  "category": "growth_intelligence",
+  "company_id": "company-openai",
+  "company_name": "OpenAI",
+  "product_id": null,
+  "product_name": null,
+  "target_url": "https://openai.com/careers/search/",
+  "goal": "Visit the public OpenAI careers search page and extract current job postings. Return structured growth data with all visible jobs, including role, team, location, timestamp, and evidence URL. Also return metrics with growth equal to the total visible job count and return any confident map points only when the page itself gives explicit location evidence.",
+  "goal_prompt": "Visit the public OpenAI careers search page and extract current job postings. Return structured growth data with all visible jobs, including role, team, location, timestamp, and evidence URL. Also return metrics with growth equal to the total visible job count and return any confident map points only when the page itself gives explicit location evidence.\n\nReturn only structured JSON that matches this schema exactly:\n{\"type\":\"object\",\"required\":[\"captured_at\",\"company\",\"jobs\",\"product_announcements\",\"funding_mentions\",\"expansion_indicators\",\"metrics\",\"map_points\"],\"properties\":{\"captured_at\":{\"type\":\"string\"},\"company\":{\"type\":\"string\"},\"jobs\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"required\":[\"title\",\"team\",\"location\",\"timestamp\",\"evidence_url\"],\"properties\":{\"title\":{\"type\":\"string\"},\"team\":{\"type\":\"string\"},\"location\":{\"type\":\"string\"},\"timestamp\":{\"type\":\"string\"},\"evidence_url\":{\"type\":\"string\"}}}},\"product_announcements\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"required\":[\"title\",\"published_at\",\"evidence_url\"],\"properties\":{\"title\":{\"type\":\"string\"},\"published_at\":{\"type\":\"string\"},\"evidence_url\":{\"type\":\"string\"},\"summary\":{\"type\":\"string\"}}}},\"funding_mentions\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"required\":[\"title\",\"published_at\",\"evidence_url\"],\"properties\":{\"title\":{\"type\":\"string\"},\"published_at\":{\"type\":\"string\"},\"evidence_url\":{\"type\":\"string\"}}}},\"expansion_indicators\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"required\":[\"title\",\"location\",\"published_at\",\"evidence_url\"],\"properties\":{\"title\":{\"type\":\"string\"},\"location\":{\"type\":\"string\"},\"published_at\":{\"type\":\"string\"},\"evidence_url\":{\"type\":\"string\"}}}},\"metrics\":{\"type\":\"object\",\"required\":[\"growth\"],\"properties\":{\"growth\":{\"type\":\"number\"}}},\"map_points\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"required\":[\"latitude\",\"longitude\",\"entity_name\",\"signal_type\",\"severity\",\"timestamp\",\"explanation\"],\"properties\":{\"latitude\":{\"type\":\"number\"},\"longitude\":{\"type\":\"number\"},\"entity_name\":{\"type\":\"string\"},\"signal_type\":{\"type\":\"string\"},\"severity\":{\"type\":\"string\"},\"timestamp\":{\"type\":\"string\"},\"explanation\":{\"type\":\"string\"},\"cluster_key\":{\"type\":\"string\"}}}}}}\n\nStop conditions:\n[\"Stop after up to 50 visible roles are extracted.\",\"Stop when pagination or infinite scroll yields no new roles.\",\"Stop after two consecutive page load failures.\"]\n\nStructured error handling rules:\n{\"timeout\":{\"action\":\"retry\",\"max_retries\":2,\"emit_status\":\"failed\"},\"layout_changed\":{\"action\":\"return_partial_result\",\"emit_status\":\"failed\"},\"schema_validation_failed\":{\"action\":\"store_raw_payload\",\"emit_status\":\"validation_error\"}}",
+  "output_schema": {
+    "type": "object",
+    "required": [
+      "captured_at",
+      "company",
+      "jobs",
+      "product_announcements",
+      "funding_mentions",
+      "expansion_indicators",
+      "metrics",
+      "map_points"
+    ],
+    "properties": {
+      "captured_at": {
+        "type": "string"
+      },
+      "company": {
+        "type": "string"
+      },
+      "jobs": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "title",
+            "team",
+            "location",
+            "timestamp",
+            "evidence_url"
+          ],
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "team": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string"
+            },
+            "timestamp": {
+              "type": "string"
+            },
+            "evidence_url": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "product_announcements": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "title",
+            "published_at",
+            "evidence_url"
+          ],
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "published_at": {
+              "type": "string"
+            },
+            "evidence_url": {
+              "type": "string"
+            },
+            "summary": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "funding_mentions": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "title",
+            "published_at",
+            "evidence_url"
+          ],
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "published_at": {
+              "type": "string"
+            },
+            "evidence_url": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "expansion_indicators": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "title",
+            "location",
+            "published_at",
+            "evidence_url"
+          ],
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string"
+            },
+            "published_at": {
+              "type": "string"
+            },
+            "evidence_url": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "metrics": {
+        "type": "object",
+        "required": [
+          "growth"
+        ],
+        "properties": {
+          "growth": {
+            "type": "number"
+          }
+        }
+      },
+      "map_points": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "latitude",
+            "longitude",
+            "entity_name",
+            "signal_type",
+            "severity",
+            "timestamp",
+            "explanation"
+          ],
+          "properties": {
+            "latitude": {
+              "type": "number"
+            },
+            "longitude": {
+              "type": "number"
+            },
+            "entity_name": {
+              "type": "string"
+            },
+            "signal_type": {
+              "type": "string"
+            },
+            "severity": {
+              "type": "string"
+            },
+            "timestamp": {
+              "type": "string"
+            },
+            "explanation": {
+              "type": "string"
+            },
+            "cluster_key": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  "stop_conditions": [
+    "Stop after up to 50 visible roles are extracted.",
+    "Stop when pagination or infinite scroll yields no new roles.",
+    "Stop after two consecutive page load failures."
+  ],
+  "error_handling": {
+    "timeout": {
+      "action": "retry",
+      "max_retries": 2,
+      "emit_status": "failed"
+    },
+    "layout_changed": {
+      "action": "return_partial_result",
+      "emit_status": "failed"
+    },
+    "schema_validation_failed": {
+      "action": "store_raw_payload",
+      "emit_status": "validation_error"
+    }
+  },
+  "run": {
+    "run_id": null,
+    "status": "FAILED",
+    "started_at": "2026-03-28T02:44:34Z",
+    "finished_at": "2026-03-28T02:44:34Z",
+    "num_of_steps": null,
+    "error": {
+      "code": "http_500",
+      "message": "An internal error occurred. Please retry."
+    }
+  },
+  "result": null,
+  "validation_errors": []
+}

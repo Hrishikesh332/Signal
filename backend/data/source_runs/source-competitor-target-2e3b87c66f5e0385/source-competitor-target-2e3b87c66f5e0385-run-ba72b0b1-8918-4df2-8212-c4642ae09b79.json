@@ -1,0 +1,27 @@
+{
+  "run_record_id": "source-competitor-target-2e3b87c66f5e0385-run-ba72b0b1-8918-4df2-8212-c4642ae09b79",
+  "source_id": "source-competitor-target-2e3b87c66f5e0385",
+  "source_name": "Competitor Target: stripe.com",
+  "category": "reputation_intelligence",
+  "company_id": "company-profile-2e3b87c66f5e0385",
+  "company_name": "stripe.com",
+  "captured_at": "2026-03-28T06:41:56.478Z",
+  "capture_status": "COMPLETED",
+  "target_url": "https://stripe.com",
+  "content_fingerprint": "81d1c758c5321aa93dd08dc6d743295bc9a23f9bc8c7df3b0e659f8f86cc3117",
+  "observed_snapshot_id": "source-competitor-target-2e3b87c66f5e0385-ba72b0b1-8918-4df2-8212-c4642ae09b79",
+  "canonical_snapshot_id": "source-competitor-target-2e3b87c66f5e0385-ba72b0b1-8918-4df2-8212-c4642ae09b79",
+  "previous_snapshot_id": "source-competitor-target-2e3b87c66f5e0385-20260328T063254Z",
+  "change_state": "updated",
+  "snapshot_persisted": true,
+  "duplicate_of_snapshot_id": null,
+  "run": {
+    "run_id": "ba72b0b1-8918-4df2-8212-c4642ae09b79",
+    "status": "COMPLETED",
+    "started_at": "2026-03-28T06:39:26.012Z",
+    "finished_at": "2026-03-28T06:41:56.478Z",
+    "num_of_steps": 20,
+    "error": null
+  },
+  "validation_errors": []
+}

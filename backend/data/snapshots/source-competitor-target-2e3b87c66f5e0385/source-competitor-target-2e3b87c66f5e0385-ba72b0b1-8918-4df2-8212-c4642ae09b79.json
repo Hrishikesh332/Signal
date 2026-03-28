@@ -1,0 +1,215 @@
+{
+  "snapshot_id": "source-competitor-target-2e3b87c66f5e0385-ba72b0b1-8918-4df2-8212-c4642ae09b79",
+  "captured_at": "2026-03-28T06:41:56.478Z",
+  "capture_status": "COMPLETED",
+  "source_id": "source-competitor-target-2e3b87c66f5e0385",
+  "source_name": "Competitor Target: stripe.com",
+  "category": "reputation_intelligence",
+  "company_id": "company-profile-2e3b87c66f5e0385",
+  "company_name": "stripe.com",
+  "product_id": null,
+  "product_name": null,
+  "target_url": "https://stripe.com",
+  "goal": "Visit the provided public company website for the target company and extract a structured competitive profile. Identify the company name, homepage URL, a concise company summary, the primary market category, sector, geography, target customers, core products or services, visible differentiators, visible pricing or packaging signals, and supporting evidence URLs. Do not invent claims that are not visible on the site. Return facts that help compare stripe.com in a competitor landscape.",
+  "goal_prompt": "Visit the provided public company website for the target company and extract a structured competitive profile. Identify the company name, homepage URL, a concise company summary, the primary market category, sector, geography, target customers, core products or services, visible differentiators, visible pricing or packaging signals, and supporting evidence URLs. Do not invent claims that are not visible on the site. Return facts that help compare stripe.com in a competitor landscape.\n\nReturn only structured JSON that matches this schema exactly:\n{\"type\":\"object\",\"required\":[\"captured_at\",\"company_name\",\"homepage_url\",\"summary\",\"market_category\",\"sector\",\"geography\",\"target_customers\",\"products\",\"differentiators\",\"pricing_signals\",\"evidence_urls\"],\"properties\":{\"captured_at\":{\"type\":\"string\"},\"company_name\":{\"type\":\"string\"},\"homepage_url\":{\"type\":\"string\"},\"summary\":{\"type\":\"string\"},\"market_category\":{\"type\":\"string\"},\"sector\":{\"type\":\"string\"},\"geography\":{\"type\":\"string\"},\"target_customers\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"products\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"required\":[\"name\",\"category\",\"summary\"],\"properties\":{\"name\":{\"type\":\"string\"},\"category\":{\"type\":\"string\"},\"summary\":{\"type\":\"string\"}}}},\"differentiators\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"pricing_signals\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"evidence_urls\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}}}\n\nStop conditions:\n[\"Stop after the homepage and up to two visibly linked product, solutions, or pricing pages have been reviewed.\",\"Stop after eight relevant visible sections have been extracted.\",\"Stop after two consecutive navigation or parsing failures.\"]\n\nStructured error handling rules:\n{\"timeout\":{\"action\":\"retry\",\"max_retries\":2,\"emit_status\":\"failed\"},\"layout_changed\":{\"action\":\"store_raw_payload\",\"emit_status\":\"failed\"},\"schema_validation_failed\":{\"action\":\"store_raw_payload\",\"emit_status\":\"validation_error\"}}",
+  "output_schema": {
+    "type": "object",
+    "required": [
+      "captured_at",
+      "company_name",
+      "homepage_url",
+      "summary",
+      "market_category",
+      "sector",
+      "geography",
+      "target_customers",
+      "products",
+      "differentiators",
+      "pricing_signals",
+      "evidence_urls"
+    ],
+    "properties": {
+      "captured_at": {
+        "type": "string"
+      },
+      "company_name": {
+        "type": "string"
+      },
+      "homepage_url": {
+        "type": "string"
+      },
+      "summary": {
+        "type": "string"
+      },
+      "market_category": {
+        "type": "string"
+      },
+      "sector": {
+        "type": "string"
+      },
+      "geography": {
+        "type": "string"
+      },
+      "target_customers": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "products": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "name",
+            "category",
+            "summary"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "category": {
+              "type": "string"
+            },
+            "summary": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "differentiators": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "pricing_signals": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "evidence_urls": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "stop_conditions": [
+    "Stop after the homepage and up to two visibly linked product, solutions, or pricing pages have been reviewed.",
+    "Stop after eight relevant visible sections have been extracted.",
+    "Stop after two consecutive navigation or parsing failures."
+  ],
+  "error_handling": {
+    "timeout": {
+      "action": "retry",
+      "max_retries": 2,
+      "emit_status": "failed"
+    },
+    "layout_changed": {
+      "action": "store_raw_payload",
+      "emit_status": "failed"
+    },
+    "schema_validation_failed": {
+      "action": "store_raw_payload",
+      "emit_status": "validation_error"
+    }
+  },
+  "run": {
+    "run_id": "ba72b0b1-8918-4df2-8212-c4642ae09b79",
+    "status": "COMPLETED",
+    "started_at": "2026-03-28T06:39:26.012Z",
+    "finished_at": "2026-03-28T06:41:56.478Z",
+    "num_of_steps": 20,
+    "error": null
+  },
+  "result": {
+    "captured_at": "2026-03-28",
+    "company_name": "Stripe, Inc.",
+    "homepage_url": "https://stripe.com",
+    "summary": "Stripe is a multinational financial services and software as a service (SaaS) company that provides payment-processing software and application programming interfaces (APIs) for e-commerce and mobile applications. It is described as building financial infrastructure for the internet.",
+    "market_category": "Payment Processing / Financial Technology (FinTech)",
+    "sector": "Financial Services",
+    "geography": "Global; dual-headquartered in South San Francisco, California, United States, and Dublin, Ireland.",
+    "target_customers": [
+      "E-commerce websites",
+      "Mobile applications",
+      "Startups",
+      "Marketplaces and platforms",
+      "Enterprise businesses (e.g., Ford, Amazon, Shopify, OpenAI)"
+    ],
+    "products": [
+      {
+        "name": "Stripe Payments",
+        "category": "Payment Processing",
+        "summary": "Core API for accepting and processing online payments globally."
+      },
+      {
+        "name": "Stripe Billing",
+        "category": "Subscription Management",
+        "summary": "Tools for managing subscriptions, recurring revenue, and usage-based billing."
+      },
+      {
+        "name": "Stripe Connect",
+        "category": "Platform Payments",
+        "summary": "Solution for platforms and marketplaces to manage and route payments between multiple parties."
+      },
+      {
+        "name": "Stripe Terminal",
+        "category": "Point of Sale (POS)",
+        "summary": "Hardware and software for accepting in-person payments."
+      },
+      {
+        "name": "Stripe Atlas",
+        "category": "Business Incorporation",
+        "summary": "Platform that helps startups easily incorporate as US entities and set up business banking."
+      },
+      {
+        "name": "Stripe Radar",
+        "category": "Fraud Prevention",
+        "summary": "Machine learning-based anti-fraud tools to detect and block fraudulent transactions."
+      },
+      {
+        "name": "Stripe Treasury",
+        "category": "Banking-as-a-Service",
+        "summary": "Enables platforms to embed financial services like bank accounts directly into their products."
+      },
+      {
+        "name": "Stripe Issuing",
+        "category": "Card Issuance",
+        "summary": "Infrastructure to create and manage physical and virtual credit and debit cards."
+      }
+    ],
+    "differentiators": [
+      "Developer-first approach with simple API integration (historically '9 lines of code').",
+      "Comprehensive 'Financial Infrastructure' suite that goes beyond simple payment processing into tax, identity, and banking.",
+      "Global scale and dual-region regulatory compliance (US and Europe).",
+      "Integration with advanced AI models (e.g., GPT-4) to enhance payment flows and automation."
+    ],
+    "pricing_signals": [
+      "Pay-as-you-go transaction-based fee structure (standard rate typically cited as 2.9% + 30\u00a2 per successful charge).",
+      "Custom pricing available for high-volume businesses and enterprise partners.",
+      "Tiered fees for additional services like Billing, Radar, and Tax."
+    ],
+    "evidence_urls": [
+      "https://stripe.com",
+      "https://stripe.com/newsroom/information",
+      "https://stripe.com/blog/terminal",
+      "https://stripe.com/blog/atlas-llc",
+      "https://stripe.com/it-hr/legal/tax-strategy"
+    ]
+  },
+  "validation_errors": [],
+  "content_fingerprint": "81d1c758c5321aa93dd08dc6d743295bc9a23f9bc8c7df3b0e659f8f86cc3117",
+  "storage": {
+    "mode": "change_only",
+    "change_state": "updated",
+    "snapshot_persisted": true,
+    "canonical_snapshot_id": "source-competitor-target-2e3b87c66f5e0385-ba72b0b1-8918-4df2-8212-c4642ae09b79",
+    "previous_snapshot_id": "source-competitor-target-2e3b87c66f5e0385-20260328T063254Z",
+    "duplicate_of_snapshot_id": null
+  }
+}

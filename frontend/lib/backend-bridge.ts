@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server"
 
 const execFileAsync = promisify(execFile)
 
-type BridgeEndpoint = "dashboard" | "market-signals"
+type BridgeEndpoint = "competitor-intelligence" | "dashboard" | "market-signals"
 
 function resolveProjectRoot() {
   const configuredRoot = process.env.MARKET_MONITOR_PROJECT_ROOT

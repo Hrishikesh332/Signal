@@ -1,0 +1,198 @@
+{
+  "snapshot_id": "source-competitor-competitor-08548762b8ce9cd2-a8bccb72-17bc-41d5-89d4-6ed1bc9bd3de",
+  "captured_at": "2026-03-28T06:53:07.918Z",
+  "capture_status": "COMPLETED",
+  "source_id": "source-competitor-competitor-08548762b8ce9cd2",
+  "source_name": "Competitor Peer: Adyen N.V.",
+  "category": "reputation_intelligence",
+  "company_id": "company-profile-08548762b8ce9cd2",
+  "company_name": "Adyen N.V.",
+  "product_id": null,
+  "product_name": null,
+  "target_url": "https://www.adyen.com",
+  "goal": "Visit the provided public company website for the competitor candidate and extract a structured competitive profile. Identify the company name, homepage URL, a concise company summary, the primary market category, sector, geography, target customers, core products or services, visible differentiators, visible pricing or packaging signals, and supporting evidence URLs. Do not invent claims that are not visible on the site. Return facts that help compare Adyen N.V. in a competitor landscape.",
+  "goal_prompt": "Visit the provided public company website for the competitor candidate and extract a structured competitive profile. Identify the company name, homepage URL, a concise company summary, the primary market category, sector, geography, target customers, core products or services, visible differentiators, visible pricing or packaging signals, and supporting evidence URLs. Do not invent claims that are not visible on the site. Return facts that help compare Adyen N.V. in a competitor landscape.\n\nReturn only structured JSON that matches this schema exactly:\n{\"type\":\"object\",\"required\":[\"captured_at\",\"company_name\",\"homepage_url\",\"summary\",\"market_category\",\"sector\",\"geography\",\"target_customers\",\"products\",\"differentiators\",\"pricing_signals\",\"evidence_urls\"],\"properties\":{\"captured_at\":{\"type\":\"string\"},\"company_name\":{\"type\":\"string\"},\"homepage_url\":{\"type\":\"string\"},\"summary\":{\"type\":\"string\"},\"market_category\":{\"type\":\"string\"},\"sector\":{\"type\":\"string\"},\"geography\":{\"type\":\"string\"},\"target_customers\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"products\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"required\":[\"name\",\"category\",\"summary\"],\"properties\":{\"name\":{\"type\":\"string\"},\"category\":{\"type\":\"string\"},\"summary\":{\"type\":\"string\"}}}},\"differentiators\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"pricing_signals\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"evidence_urls\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}}}\n\nStop conditions:\n[\"Stop after the homepage and up to two visibly linked product, solutions, or pricing pages have been reviewed.\",\"Stop after eight relevant visible sections have been extracted.\",\"Stop after two consecutive navigation or parsing failures.\"]\n\nStructured error handling rules:\n{\"timeout\":{\"action\":\"retry\",\"max_retries\":2,\"emit_status\":\"failed\"},\"layout_changed\":{\"action\":\"store_raw_payload\",\"emit_status\":\"failed\"},\"schema_validation_failed\":{\"action\":\"store_raw_payload\",\"emit_status\":\"validation_error\"}}",
+  "output_schema": {
+    "type": "object",
+    "required": [
+      "captured_at",
+      "company_name",
+      "homepage_url",
+      "summary",
+      "market_category",
+      "sector",
+      "geography",
+      "target_customers",
+      "products",
+      "differentiators",
+      "pricing_signals",
+      "evidence_urls"
+    ],
+    "properties": {
+      "captured_at": {
+        "type": "string"
+      },
+      "company_name": {
+        "type": "string"
+      },
+      "homepage_url": {
+        "type": "string"
+      },
+      "summary": {
+        "type": "string"
+      },
+      "market_category": {
+        "type": "string"
+      },
+      "sector": {
+        "type": "string"
+      },
+      "geography": {
+        "type": "string"
+      },
+      "target_customers": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "products": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "name",
+            "category",
+            "summary"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "category": {
+              "type": "string"
+            },
+            "summary": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "differentiators": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "pricing_signals": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "evidence_urls": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "stop_conditions": [
+    "Stop after the homepage and up to two visibly linked product, solutions, or pricing pages have been reviewed.",
+    "Stop after eight relevant visible sections have been extracted.",
+    "Stop after two consecutive navigation or parsing failures."
+  ],
+  "error_handling": {
+    "timeout": {
+      "action": "retry",
+      "max_retries": 2,
+      "emit_status": "failed"
+    },
+    "layout_changed": {
+      "action": "store_raw_payload",
+      "emit_status": "failed"
+    },
+    "schema_validation_failed": {
+      "action": "store_raw_payload",
+      "emit_status": "validation_error"
+    }
+  },
+  "run": {
+    "run_id": "a8bccb72-17bc-41d5-89d4-6ed1bc9bd3de",
+    "status": "COMPLETED",
+    "started_at": "2026-03-28T06:52:06.626Z",
+    "finished_at": "2026-03-28T06:53:07.918Z",
+    "num_of_steps": 3,
+    "error": null
+  },
+  "result": {
+    "captured_at": "2026-03-28",
+    "company_name": "Adyen",
+    "homepage_url": "https://www.adyen.com",
+    "summary": "Adyen is a global financial technology platform that integrates the entire payments stack\u2014from gateway to acquiring and processing\u2014into a single solution, enabling businesses to accept payments, protect revenue, and manage finances across online, in-person, and in-app channels.",
+    "market_category": "Payments & Financial Technology (Fintech)",
+    "sector": "Financial Services",
+    "geography": "Global (29 global offices including Amsterdam, New York, San Francisco, and Singapore)",
+    "target_customers": [
+      "Global enterprises",
+      "Retailers",
+      "Travel and hospitality",
+      "Digital media and content",
+      "SaaS platforms and marketplaces",
+      "Food and beverage",
+      "Financial services"
+    ],
+    "products": [
+      {
+        "name": "Accept Payments",
+        "category": "Payments",
+        "summary": "A single platform to accept payments across web, mobile apps, and in-person (POS) channels, supporting global and local payment methods."
+      },
+      {
+        "name": "Issuing",
+        "category": "Financial Services",
+        "summary": "Allows businesses to create and manage their own virtual and physical card programs with integrated payouts and real-time control."
+      },
+      {
+        "name": "Adyen for Platforms",
+        "category": "Platforms & Marketplaces",
+        "summary": "A specialized solution for marketplaces and platform businesses to manage multi-party payments, onboarding, and global payouts."
+      },
+      {
+        "name": "Risk Management",
+        "category": "Security",
+        "summary": "Built-in tools using data and machine learning to detect and prevent fraud while maintaining high conversion rates for legitimate customers."
+      }
+    ],
+    "differentiators": [
+      "Unified platform for online and offline payments (Unified Commerce)",
+      "Direct connection to global card schemes and local payment methods via a single integration",
+      "In-house acquiring licenses in major markets to optimize authorization rates and lower costs",
+      "Single data source across all sales channels for better customer insights",
+      "Enterprise-grade reliability with 24/7 support and high-scale infrastructure"
+    ],
+    "pricing_signals": [
+      "Interchange++ pricing model for transparency",
+      "Fixed processing fee per transaction (e.g., $0.13) plus a variable payment method fee",
+      "No setup fees or monthly fees for standard services",
+      "Custom pricing options available for high-volume enterprise businesses",
+      "Tiered pricing structures for specific regions and payment types"
+    ],
+    "evidence_urls": [
+      "https://www.adyen.com",
+      "https://www.adyen.com/pricing",
+      "https://www.adyen.com/accept-payments"
+    ]
+  },
+  "validation_errors": [],
+  "content_fingerprint": "56efca5a61e5ca289150d65dc3329a06c4909372f393728f06e1ef7c4346aef4",
+  "storage": {
+    "mode": "change_only",
+    "change_state": "updated",
+    "snapshot_persisted": true,
+    "canonical_snapshot_id": "source-competitor-competitor-08548762b8ce9cd2-a8bccb72-17bc-41d5-89d4-6ed1bc9bd3de",
+    "previous_snapshot_id": "source-competitor-competitor-08548762b8ce9cd2-7f780646-1893-4a27-b05b-771bce397f95",
+    "duplicate_of_snapshot_id": null
+  }
+}
