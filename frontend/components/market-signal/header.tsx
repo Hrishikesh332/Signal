@@ -2,13 +2,14 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Globe2, Radio, LayoutDashboard } from "lucide-react"
+import { Globe2, Radio, LayoutDashboard, Target } from "lucide-react"
 
 export function Header() {
   const pathname = usePathname()
   const isDashboard = pathname === "/dashboard"
   const isLatest = pathname === "/latest" || pathname === "/"
   const isGlobe = pathname === "/globe"
+  const isViability = pathname === "/product-viability"
 
   return (
     <header className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-6 h-14 bg-[#09090b]/80 backdrop-blur-md border-b border-[#27272a]/50">
@@ -52,6 +53,17 @@ export function Header() {
         >
           <Globe2 className="w-3.5 h-3.5" />
           Globe
+        </Link>
+        <Link
+          href="/product-viability"
+          className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium tracking-wide transition-all duration-200 rounded-full ${
+            isViability
+              ? "bg-white text-black shadow-lg"
+              : "text-[#a1a1aa] hover:text-white"
+          }`}
+        >
+          <Target className="w-3.5 h-3.5" />
+          Viability
         </Link>
       </nav>
     </header>
