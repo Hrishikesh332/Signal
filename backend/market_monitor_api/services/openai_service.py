@@ -524,6 +524,243 @@ def build_growth_request_payload(
     }
 
 
+def run_product_viability_analysis(payload: dict, enrichment_context: dict, settings: Settings) -> dict:
+    if not settings.openai_configured:
+        raise ValueError("OpenAI is not configured.")
+
+    request = Request(
+        f"{settings.openai_base_url.rstrip('/')}/responses",
+        data=json.dumps(build_product_viability_request_payload(payload, enrichment_context, settings)).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {settings.openai_api_key}",
+        },
+        method="POST",
+    )
+    try:
+        with urlopen(request, timeout=settings.openai_timeout_seconds) as response:
+            response_payload = json.loads(response.read().decode("utf-8"))
+    except (HTTPError, TimeoutError, socket.timeout, URLError) as exc:
+        raise ValueError("OpenAI product viability analysis is unavailable.") from exc
+
+    output_text = extract_openai_output_text(response_payload)
+    if not output_text:
+        raise ValueError("OpenAI returned an empty product viability response.")
+
+    try:
+        analysis_payload = json.loads(output_text)
+    except json.JSONDecodeError as exc:
+        raise ValueError("OpenAI returned invalid product viability JSON.") from exc
+
+    normalized = normalize_product_viability_decision(analysis_payload)
+    if not normalized:
+        raise ValueError("OpenAI returned an incomplete product viability response.")
+    if not normalized["analysis_sources"]:
+        normalized["analysis_sources"] = build_default_analysis_sources(payload, enrichment_context)
+    return normalized
+
+
+def build_product_viability_request_payload(payload: dict, enrichment_context: dict, settings: Settings) -> dict:
+    content = [
+        {
+            "type": "input_text",
+            "text": json.dumps(
+                build_product_viability_prompt_document(payload, enrichment_context),
+                separators=(",", ":"),
+                ensure_ascii=True,
+            ),
+        }
+    ]
+    for image in payload.get("images", []):
+        content.append(
+            {
+                "type": "input_image",
+                "image_url": image["data_url"],
+            }
+        )
+    return {
+        "model": settings.openai_model,
+        "input": [
+            {
+                "role": "developer",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": (
+                            "You are a market analyst for early product decisions. "
+                            "Assess commercial viability, not implementation difficulty. "
+                            "Use the submitted text, images, TinyFish live market research, "
+                            "and any provided local Signal context. "
+                            "Prioritize cited TinyFish evidence over generic assumptions. "
+                            "Do not invent evidence that is not in the prompt. "
+                            "Return only JSON matching the provided schema."
+                        ),
+                    }
+                ],
+            },
+            {
+                "role": "user",
+                "content": content,
+            },
+        ],
+        "text": {
+            "format": {
+                "type": "json_schema",
+                "name": "product_viability_decision",
+                "schema": build_product_viability_response_schema(),
+            }
+        },
+    }
+
+
+def build_product_viability_prompt_document(payload: dict, enrichment_context: dict) -> dict:
+    return {
+        "submitted_product": {
+            "natural_language_input": payload.get("natural_language_input") or None,
+            "product_name": payload.get("product_name") or None,
+            "description": payload.get("description") or None,
+            "category": payload.get("category") or None,
+            "price_point": payload.get("price_point") or None,
+            "target_customer": payload.get("target_customer") or None,
+            "market_context": payload.get("market_context") or None,
+            "research_depth": payload.get("research_depth") or "standard",
+            "image_count": len(payload.get("images", [])),
+        },
+        "live_market_research": enrichment_context.get("live_market_research"),
+        "local_signal_context": enrichment_context.get("local_signal_context"),
+        "decision_goal": {
+            "focus": "commercial_viability",
+            "recommendation_values": ["strong_yes", "cautious_yes", "unclear", "likely_no"],
+            "viability_score_range": "0-100",
+            "confidence_score_range": "0-1",
+        },
+    }
+
+
+def build_product_viability_response_schema() -> dict:
+    return {
+        "type": "object",
+        "additionalProperties": False,
+        "required": [
+            "summary",
+            "viability_score",
+            "recommendation",
+            "target_customer",
+            "strengths",
+            "risks",
+            "differentiation",
+            "pricing_fit",
+            "demand_signals",
+            "next_validation_steps",
+            "confidence_score",
+            "analysis_sources",
+        ],
+        "properties": {
+            "summary": {"type": "string"},
+            "viability_score": {"type": "number"},
+            "recommendation": {"type": "string"},
+            "target_customer": {"type": "string"},
+            "strengths": {"type": "array", "items": {"type": "string"}},
+            "risks": {"type": "array", "items": {"type": "string"}},
+            "differentiation": {"type": "string"},
+            "pricing_fit": {"type": "string"},
+            "demand_signals": {"type": "array", "items": {"type": "string"}},
+            "next_validation_steps": {"type": "array", "items": {"type": "string"}},
+            "confidence_score": {"type": "number"},
+            "analysis_sources": {"type": "array", "items": {"type": "string"}},
+        },
+    }
+
+
+def normalize_product_viability_decision(payload: dict) -> dict | None:
+    if not isinstance(payload, dict):
+        return None
+    summary = clean_string(payload.get("summary"))
+    if not summary:
+        return None
+
+    recommendation = clean_string(payload.get("recommendation")) or "unclear"
+    if recommendation not in {"strong_yes", "cautious_yes", "unclear", "likely_no"}:
+        recommendation = "unclear"
+
+    normalized = {
+        "summary": summary,
+        "viability_score": normalize_viability_score(payload.get("viability_score")),
+        "recommendation": recommendation,
+        "target_customer": clean_string(payload.get("target_customer")) or "",
+        "strengths": clean_string_list(payload.get("strengths")),
+        "risks": clean_string_list(payload.get("risks")),
+        "differentiation": clean_string(payload.get("differentiation")) or "",
+        "pricing_fit": clean_string(payload.get("pricing_fit")) or "",
+        "demand_signals": clean_string_list(payload.get("demand_signals")),
+        "next_validation_steps": clean_string_list(payload.get("next_validation_steps")),
+        "confidence_score": normalize_confidence_score(payload.get("confidence_score")),
+        "analysis_sources": normalize_analysis_sources(payload.get("analysis_sources")),
+    }
+    return normalized
+
+
+def normalize_viability_score(value) -> int:
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return 0
+    if 0 <= value <= 1:
+        value *= 100
+    return max(0, min(100, int(round(value))))
+
+
+def normalize_confidence_score(value) -> float:
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return 0.0
+    if 1 < value <= 100:
+        value /= 100
+    return round(max(0.0, min(1.0, float(value))), 4)
+
+
+def normalize_analysis_sources(values) -> list[str]:
+    allowed = {"user_description", "user_images", "local_signal_context", "tinyfish_live_research"}
+    if not isinstance(values, list):
+        return []
+    normalized = []
+    for value in values:
+        if not isinstance(value, str):
+            continue
+        cleaned = value.strip()
+        if cleaned in allowed and cleaned not in normalized:
+            normalized.append(cleaned)
+    return normalized
+
+
+def clean_string(value) -> str:
+    if not isinstance(value, str):
+        return ""
+    return " ".join(value.strip().split())
+
+
+def clean_string_list(values) -> list[str]:
+    if not isinstance(values, list):
+        return []
+    cleaned = []
+    for value in values:
+        normalized = clean_string(value)
+        if normalized:
+            cleaned.append(normalized)
+    return cleaned[:6]
+
+
+def build_default_analysis_sources(payload: dict, enrichment_context: dict) -> list[str]:
+    sources = []
+    if payload.get("description"):
+        sources.append("user_description")
+    if payload.get("images"):
+        sources.append("user_images")
+    if enrichment_context.get("live_market_research"):
+        sources.append("tinyfish_live_research")
+    local_signal_context = enrichment_context.get("local_signal_context") or {}
+    if local_signal_context.get("used_local_context"):
+        sources.append("local_signal_context")
+    return sources
+
+
 def build_growth_history_context(snapshots: list[dict]) -> dict[str, list[dict]]:
     history: dict[str, list[dict]] = {}
     snapshots_by_company: dict[str, list[dict]] = {}
