@@ -11,6 +11,7 @@ from app import app
 
 
 VALID_ENDPOINTS = {
+    "competitor-intelligence": "/api/v1/competitor-intelligence",
     "dashboard": "/api/v1/dashboard",
     "market-signals": "/api/v1/market-signals",
 }

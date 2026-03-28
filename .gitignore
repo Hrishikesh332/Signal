@@ -53,8 +53,6 @@ Thumbs.db
 *.swo
 *~
 
-# Generated snapshot data (timestamped JSON from monitors)
-backend/data/snapshots/
 
 # API / endpoint verification outputs
 backend/data/verification/

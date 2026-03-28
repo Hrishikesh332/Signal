@@ -4,6 +4,7 @@ from flask import Flask
 
 from market_monitor_api.config import get_settings
 from market_monitor_api.routes.commerce_intelligence import commerce_bp
+from market_monitor_api.routes.competitor_intelligence import competitor_bp
 from market_monitor_api.routes.dashboard import dashboard_bp
 from market_monitor_api.routes.growth_intelligence import growth_bp
 from market_monitor_api.routes.market_signals import market_signals_bp
@@ -17,6 +18,7 @@ def create_app() -> Flask:
     app.config["SETTINGS"] = settings
     app.register_blueprint(dashboard_bp, url_prefix="/api/v1")
     app.register_blueprint(commerce_bp, url_prefix="/api/v1")
+    app.register_blueprint(competitor_bp, url_prefix="/api/v1")
     app.register_blueprint(growth_bp, url_prefix="/api/v1")
     app.register_blueprint(market_signals_bp, url_prefix="/api/v1")
     app.register_blueprint(watcher_qa_bp, url_prefix="/api/v1")

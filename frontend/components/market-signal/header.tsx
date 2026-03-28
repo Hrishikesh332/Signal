@@ -2,10 +2,11 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Globe2, Radio, LayoutDashboard } from "lucide-react"
+import { Globe2, Radio, LayoutDashboard, Users2 } from "lucide-react"
 
 export function Header() {
   const pathname = usePathname()
+  const isCompetitors = pathname === "/competitors"
   const isDashboard = pathname === "/dashboard"
   const isLatest = pathname === "/latest" || pathname === "/"
 
@@ -29,6 +30,17 @@ export function Header() {
         >
           <LayoutDashboard className="w-3.5 h-3.5" />
           Dashboard
+        </Link>
+        <Link
+          href="/competitors"
+          className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium tracking-wide transition-all duration-200 rounded-full ${
+            isCompetitors
+              ? "bg-white text-black shadow-lg"
+              : "text-[#a1a1aa] hover:text-white"
+          }`}
+        >
+          <Users2 className="w-3.5 h-3.5" />
+          Competitors
         </Link>
         <Link
           href="/latest"
