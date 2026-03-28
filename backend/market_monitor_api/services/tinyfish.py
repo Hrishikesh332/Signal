@@ -1,6 +1,7 @@
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
+import hashlib
 import socket
 import time
 from urllib.error import HTTPError, URLError
@@ -106,12 +107,15 @@ def build_tinyfish_goal_prompt(source: dict) -> str:
 
 
 def run_source_refreshes(settings: Settings, sources: list[dict]) -> list[dict]:
+    latest_snapshot_by_source = build_latest_snapshot_by_source(load_snapshots(settings))
     snapshots = []
     for source in sources:
         run_response = run_tinyfish_source(settings, source)
         snapshot = build_snapshot_record(source, run_response)
-        persist_snapshot(settings, snapshot)
-        snapshots.append(snapshot)
+        stored_snapshot = persist_refresh_result(settings, snapshot, latest_snapshot_by_source.get(source["id"]))
+        if stored_snapshot.get("storage", {}).get("snapshot_persisted"):
+            latest_snapshot_by_source[source["id"]] = stored_snapshot
+        snapshots.append(stored_snapshot)
     return snapshots
 
 
@@ -354,7 +358,7 @@ def build_snapshot_record(source: dict, run_response: dict) -> dict:
         validation_errors = validate_result_against_schema(source["output_schema"], result)
         if validation_errors:
             capture_status = "VALIDATION_ERROR"
-    return {
+    snapshot = {
         "snapshot_id": build_snapshot_id(source["id"], captured_at, run_response.get("run_id")),
         "captured_at": captured_at,
         "capture_status": capture_status,
@@ -382,6 +386,8 @@ def build_snapshot_record(source: dict, run_response: dict) -> dict:
         "result": result,
         "validation_errors": validation_errors,
     }
+    snapshot["content_fingerprint"] = build_snapshot_fingerprint(snapshot)
+    return snapshot
 
 
 def build_snapshot_id(source_id: str, captured_at: str, run_id: str | None) -> str:
@@ -445,12 +451,85 @@ def validate_type_value(expected_type: str, value) -> bool:
     return validator(value)
 
 
+def persist_refresh_result(settings: Settings, snapshot: dict, previous_snapshot: dict | None) -> dict:
+    storage = build_snapshot_storage_decision(snapshot, previous_snapshot)
+    snapshot_path = None
+    if storage["snapshot_persisted"]:
+        snapshot_to_store = {
+            **snapshot,
+            "storage": storage,
+        }
+        snapshot_path = persist_snapshot(settings, snapshot_to_store)
+    run_record = build_source_run_record(snapshot, storage)
+    run_path = persist_source_run(settings, run_record)
+    return {
+        **snapshot,
+        "file_path": str(snapshot_path) if snapshot_path else previous_snapshot.get("file_path") if previous_snapshot else None,
+        "storage": {
+            **storage,
+            "run_record_id": run_record["run_record_id"],
+            "run_file_path": str(run_path),
+        },
+    }
+
+
+def build_snapshot_storage_decision(snapshot: dict, previous_snapshot: dict | None) -> dict:
+    if previous_snapshot is None:
+        return {
+            "mode": "change_only",
+            "change_state": "new",
+            "snapshot_persisted": True,
+            "canonical_snapshot_id": snapshot["snapshot_id"],
+            "previous_snapshot_id": None,
+            "duplicate_of_snapshot_id": None,
+        }
+    previous_fingerprint = previous_snapshot.get("content_fingerprint") or build_snapshot_fingerprint(previous_snapshot)
+    current_fingerprint = snapshot.get("content_fingerprint") or build_snapshot_fingerprint(snapshot)
+    if previous_fingerprint == current_fingerprint:
+        return {
+            "mode": "change_only",
+            "change_state": "unchanged",
+            "snapshot_persisted": False,
+            "canonical_snapshot_id": previous_snapshot["snapshot_id"],
+            "previous_snapshot_id": previous_snapshot["snapshot_id"],
+            "duplicate_of_snapshot_id": previous_snapshot["snapshot_id"],
+        }
+    return {
+        "mode": "change_only",
+        "change_state": "updated",
+        "snapshot_persisted": True,
+        "canonical_snapshot_id": snapshot["snapshot_id"],
+        "previous_snapshot_id": previous_snapshot["snapshot_id"],
+        "duplicate_of_snapshot_id": None,
+    }
+
+
+def build_snapshot_fingerprint(snapshot: dict) -> str:
+    fingerprint_payload = {
+        "capture_status": snapshot.get("capture_status"),
+        "result": snapshot.get("result"),
+        "validation_errors": snapshot.get("validation_errors"),
+        "error": snapshot.get("run", {}).get("error"),
+    }
+    encoded = json.dumps(fingerprint_payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
 def persist_snapshot(settings: Settings, snapshot: dict) -> Path:
     snapshot_root = settings.resolve_path(settings.snapshot_store_dir)
     source_dir = snapshot_root / snapshot["source_id"]
     source_dir.mkdir(parents=True, exist_ok=True)
     file_path = source_dir / f"{snapshot['snapshot_id']}.json"
     file_path.write_text(json.dumps(snapshot, indent=2, ensure_ascii=True))
+    return file_path
+
+
+def persist_source_run(settings: Settings, run_record: dict) -> Path:
+    run_root = settings.resolve_path(settings.source_run_store_dir)
+    source_dir = run_root / run_record["source_id"]
+    source_dir.mkdir(parents=True, exist_ok=True)
+    file_path = source_dir / f"{run_record['run_record_id']}.json"
+    file_path.write_text(json.dumps(run_record, indent=2, ensure_ascii=True))
     return file_path
 
 
@@ -466,31 +545,94 @@ def load_snapshots(settings: Settings) -> list[dict]:
     return sort_snapshots(snapshots)
 
 
+def load_source_runs(settings: Settings) -> list[dict]:
+    run_root = settings.resolve_path(settings.source_run_store_dir)
+    if not run_root.exists():
+        return []
+    runs = []
+    for file_path in sorted(run_root.rglob("*.json")):
+        run_record = json.loads(file_path.read_text())
+        run_record["file_path"] = str(file_path)
+        runs.append(run_record)
+    return sort_source_runs(runs)
+
+
 def sort_snapshots(snapshots: list[dict]) -> list[dict]:
     return sorted(snapshots, key=lambda snapshot: parse_iso_datetime(snapshot["captured_at"]))
+
+
+def sort_source_runs(run_records: list[dict]) -> list[dict]:
+    return sorted(run_records, key=lambda record: parse_iso_datetime(record["captured_at"]))
+
+
+def build_latest_snapshot_by_source(snapshots: list[dict]) -> dict[str, dict]:
+    latest_by_source = {}
+    for snapshot in sort_snapshots(snapshots):
+        latest_by_source[snapshot["source_id"]] = snapshot
+    return latest_by_source
+
+
+def build_source_run_record(snapshot: dict, storage: dict) -> dict:
+    return {
+        "run_record_id": build_source_run_record_id(snapshot["source_id"], snapshot["captured_at"], snapshot.get("run", {}).get("run_id")),
+        "source_id": snapshot["source_id"],
+        "source_name": snapshot["source_name"],
+        "category": snapshot["category"],
+        "company_id": snapshot["company_id"],
+        "company_name": snapshot["company_name"],
+        "captured_at": snapshot["captured_at"],
+        "capture_status": snapshot["capture_status"],
+        "target_url": snapshot["target_url"],
+        "content_fingerprint": snapshot.get("content_fingerprint"),
+        "observed_snapshot_id": snapshot["snapshot_id"],
+        "canonical_snapshot_id": storage["canonical_snapshot_id"],
+        "previous_snapshot_id": storage["previous_snapshot_id"],
+        "change_state": storage["change_state"],
+        "snapshot_persisted": storage["snapshot_persisted"],
+        "duplicate_of_snapshot_id": storage["duplicate_of_snapshot_id"],
+        "run": snapshot.get("run", {}),
+        "validation_errors": snapshot.get("validation_errors", []),
+    }
+
+
+def build_source_run_record_id(source_id: str, captured_at: str, run_id: str | None) -> str:
+    normalized_timestamp = captured_at.replace(":", "").replace("-", "").replace(".", "")
+    normalized_timestamp = normalized_timestamp.replace("+00:00", "Z")
+    if run_id:
+        return f"{source_id}-run-{run_id}"
+    return f"{source_id}-run-{normalized_timestamp}"
 
 
 def build_source_health(settings: Settings, sources: list[dict], snapshots: list[dict]) -> list[dict]:
     source_snapshots: dict[str, list[dict]] = defaultdict(list)
     for snapshot in snapshots:
         source_snapshots[snapshot["source_id"]].append(snapshot)
+    source_runs: dict[str, list[dict]] = defaultdict(list)
+    for run_record in load_source_runs(settings):
+        source_runs[run_record["source_id"]].append(run_record)
     health_records = []
     for source in sources:
-        records = sort_snapshots(source_snapshots.get(source["id"], []))
-        latest = records[-1] if records else None
-        successful_runs = len([record for record in records if record["capture_status"] == "COMPLETED"])
-        total_runs = len(records)
+        snapshot_records = sort_snapshots(source_snapshots.get(source["id"], []))
+        run_records = sort_source_runs(source_runs.get(source["id"], []))
+        latest_snapshot = snapshot_records[-1] if snapshot_records else None
+        history_records = run_records or snapshot_records
+        latest_record = history_records[-1] if history_records else None
+        successful_runs = len([record for record in history_records if record["capture_status"] == "COMPLETED"])
+        total_runs = len(history_records)
         health_records.append(
             {
                 "source_id": source["id"],
-                "status": build_health_status(latest),
-                "last_run_at": latest["captured_at"] if latest else None,
+                "status": build_health_status(latest_record),
+                "last_run_at": latest_record["captured_at"] if latest_record else None,
+                "last_snapshot_at": latest_snapshot["captured_at"] if latest_snapshot else None,
                 "success_rate": round(successful_runs / total_runs, 4) if total_runs else None,
-                "avg_runtime_ms": build_average_runtime_ms(records),
-                "snapshots_total": total_runs,
+                "avg_runtime_ms": build_average_runtime_ms(history_records),
+                "snapshots_total": len(snapshot_records),
+                "runs_total": total_runs,
+                "unchanged_runs": len([record for record in run_records if record.get("change_state") == "unchanged"]),
                 "provider": "TinyFish",
                 "configured": settings.tinyfish_configured,
-                "last_error": build_last_error(latest),
+                "last_error": build_last_error(latest_record),
             }
         )
     return health_records
@@ -718,7 +860,13 @@ def normalize_map_point(point: dict) -> dict | None:
 
 
 def parse_iso_datetime(value: str) -> datetime:
-    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    normalized = value.strip().replace("Z", "+00:00")
+    if normalized.endswith(" UTC"):
+        normalized = f"{normalized[:-4]}+00:00"
+    parsed = datetime.fromisoformat(normalized)
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
 
 
 def to_iso_timestamp(value: datetime) -> str:

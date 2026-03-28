@@ -1,0 +1,27 @@
+{
+  "run_record_id": "source-market-hacker-news-run-eff0a71a-fb38-40bf-8f4f-558243a51b29",
+  "source_id": "source-market-hacker-news",
+  "source_name": "Hacker News Front Page",
+  "category": "reputation_intelligence",
+  "company_id": "market-tech",
+  "company_name": "Tech Market",
+  "captured_at": "2026-03-28T05:46:49.102Z",
+  "capture_status": "COMPLETED",
+  "target_url": "https://news.ycombinator.com/",
+  "content_fingerprint": "3b49b011e6a8d41f5d9db87d0ed36cc34aca2b1670b6e68dc0f785e7cf3c6dc0",
+  "observed_snapshot_id": "source-market-hacker-news-eff0a71a-fb38-40bf-8f4f-558243a51b29",
+  "canonical_snapshot_id": "source-market-hacker-news-eff0a71a-fb38-40bf-8f4f-558243a51b29",
+  "previous_snapshot_id": "source-market-hacker-news-7165acfb-2a94-48f0-9bad-22e67a6aee42",
+  "change_state": "updated",
+  "snapshot_persisted": true,
+  "duplicate_of_snapshot_id": null,
+  "run": {
+    "run_id": "eff0a71a-fb38-40bf-8f4f-558243a51b29",
+    "status": "COMPLETED",
+    "started_at": "2026-03-28T05:45:50.667Z",
+    "finished_at": "2026-03-28T05:46:49.102Z",
+    "num_of_steps": 2,
+    "error": null
+  },
+  "validation_errors": []
+}

@@ -40,3 +40,6 @@ instance/
 
 # Generated snapshot data
 data/snapshots/
+
+# API / endpoint verification outputs
+data/verification/

@@ -4,6 +4,8 @@ import type L from "leaflet"
 import { Loader2, Search } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
+import { fetchAppApi } from "@/lib/fetch-app"
+
 export type GeocodeHit = {
   lat: string
   lon: string
@@ -50,7 +52,7 @@ function goToPlace(map: L.Map, hit: GeocodeHit) {
 }
 
 async function fetchPlaces(q: string): Promise<GeocodeHit[]> {
-  const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`)
+  const res = await fetchAppApi(`/api/geocode?q=${encodeURIComponent(q)}`)
   if (!res.ok) return []
   const data = (await res.json()) as { results?: GeocodeHit[] }
   return data.results ?? []

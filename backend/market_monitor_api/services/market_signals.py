@@ -2,6 +2,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from statistics import median
+import hashlib
 import json
 
 from market_monitor_api.services.api_contract import build_contract_payload, decode_cursor, paginate_records
@@ -24,6 +25,7 @@ from market_monitor_api.services.tinyfish import (
     build_source_health,
     load_snapshots,
     load_source_catalog,
+    load_source_runs,
     parse_iso_datetime,
     run_source_refreshes,
     to_iso_timestamp,
@@ -127,6 +129,7 @@ def build_market_signals_response(settings: Settings, refresh: bool = False, fil
         "correlations": dataset["correlations"],
         "qa": dataset["qa"],
         "map": dataset["map"],
+        "recent_runs": dataset["recent_runs"],
         "facets": build_market_signal_facets(dataset["registry_items"]),
     }
 
@@ -152,7 +155,7 @@ def build_market_signal_detail_response(settings: Settings, signal_id: str) -> d
         "occurrences": signal_history,
         "related_signals": related_signals,
         "trend_history": build_signal_trend_history(signal_history),
-        "source_run_history": build_source_run_history(signal["source_ids"], dataset["snapshots"]),
+        "source_run_history": build_source_run_history(settings, signal["source_ids"], dataset["snapshots"]),
         "raw_evidence": build_raw_evidence_payload(signal_history, snapshots_by_id),
         "benchmark": signal.get("benchmark"),
         "impact_rubric": signal.get("impact_rubric"),
@@ -204,6 +207,7 @@ def update_market_signal_lifecycle(
 def build_watcher_qa_response(settings: Settings) -> dict:
     sources = load_source_catalog(settings)
     snapshots = load_snapshots(settings)
+    source_runs = load_source_runs(settings)
     source_health = []
     category_status = []
     for category in sorted(VALID_MARKET_SIGNAL_CATEGORIES):
@@ -219,6 +223,7 @@ def build_watcher_qa_response(settings: Settings) -> dict:
             "generated_at": to_iso_timestamp(datetime.now(timezone.utc)),
             "source_count": len(sources),
             "snapshot_count": len(snapshots),
+            "run_count": len(source_runs),
         },
         "category_status": category_status,
         "source_health": sort_market_signal_source_health(source_health),
@@ -312,6 +317,7 @@ def collect_market_signals_dataset(
     )
     qa = build_watcher_qa_payload(settings, source_records, snapshots, source_health)
     signal_map = build_signal_map_payload(signal_registry["active_items"])
+    relevant_source_ids = [source["source_id"] for source in deduplicate_market_signal_sources(source_records)]
     return {
         "registry_items": signal_registry["registry_items"],
         "active_items": signal_registry["active_items"],
@@ -332,6 +338,7 @@ def collect_market_signals_dataset(
         "filters": filters,
         "latest_snapshot_at": max(latest_snapshot_candidates, key=parse_iso_datetime) if latest_snapshot_candidates else None,
         "snapshots": deduplicate_snapshots(snapshots),
+        "recent_runs": build_recent_source_runs(settings, relevant_source_ids, limit=40),
     }
 
 
@@ -560,7 +567,7 @@ def normalize_reputation_market_snapshot(snapshot: dict, source: dict) -> dict |
     result = snapshot.get("result")
     if not isinstance(result, dict):
         return None
-    captured_at = result.get("captured_at") or snapshot.get("captured_at")
+    captured_at = select_market_snapshot_captured_at(result.get("captured_at"), snapshot.get("captured_at"))
     if not isinstance(captured_at, str) or not captured_at.strip():
         return None
     articles = collect_market_articles(result)
@@ -583,6 +590,18 @@ def normalize_reputation_market_snapshot(snapshot: dict, source: dict) -> dict |
         "file_path": snapshot.get("file_path"),
         "run": snapshot.get("run"),
     }
+
+
+def select_market_snapshot_captured_at(result_captured_at, snapshot_captured_at) -> str | None:
+    if isinstance(result_captured_at, str) and result_captured_at.strip():
+        normalized = result_captured_at.strip()
+        if "T" in normalized and any(token in normalized for token in ["Z", "+"]):
+            return normalized
+    if isinstance(snapshot_captured_at, str) and snapshot_captured_at.strip():
+        return snapshot_captured_at.strip()
+    if isinstance(result_captured_at, str) and result_captured_at.strip():
+        return result_captured_at.strip()
+    return None
 
 
 def collect_market_articles(result: dict) -> list[dict]:
@@ -659,7 +678,23 @@ def normalize_market_category_value(value: str) -> str | None:
         return "tech"
     if normalized in {"finance", "financial", "fintech", "banking", "payments", "markets"}:
         return "finance"
-    if any(keyword in normalized for keyword in ["tech", "ai", "software", "chip", "developer", "platform", "infrastructure"]):
+    if any(
+        keyword in normalized
+        for keyword in [
+            "tech",
+            "ai",
+            "software",
+            "chip",
+            "developer",
+            "platform",
+            "infrastructure",
+            "semiconductor",
+            "hardware",
+            "display",
+            "telecom",
+            "operating system",
+        ]
+    ):
         return "tech"
     if any(keyword in normalized for keyword in ["finance", "fintech", "bank", "payment", "market", "insurance", "trading"]):
         return "finance"
@@ -719,9 +754,22 @@ def build_history_reputation_occurrences(snapshots: list[dict], sources: list[di
 
 def build_reputation_market_signal_occurrence(article: dict, snapshot: dict, source: dict) -> dict:
     market_category = article["market_category"]
+    content_hash = build_market_signal_content_hash(
+        {
+            "title": article["title"],
+            "summary": article["summary"],
+            "article_url": article["article_url"],
+            "signal_type": article["signal_type"],
+            "market_category": market_category,
+            "severity": article["severity"],
+            "companies": article["companies"],
+            "regions": article["regions"],
+        }
+    )
     return {
         "id": f"{snapshot['snapshot_id']}::{article['id']}",
         "occurrence_id": f"{snapshot['snapshot_id']}::{article['id']}",
+        "content_hash": content_hash,
         "signal_key": "::".join(["reputation", source["id"], article["article_url"]]),
         "title": article["title"],
         "summary": article["summary"],
@@ -805,6 +853,7 @@ def build_market_signal_sources(category: str, sources: list[dict]) -> list[dict
             "geography": source.get("geography"),
             "product_category": source.get("product_category"),
             "revenue_exposure_weight": source.get("revenue_exposure_weight"),
+            "schedule": source.get("schedule"),
             "watcher": source.get("watcher"),
         }
         for source in sources
@@ -851,9 +900,40 @@ def build_market_signal_source_health(category: str, sources: list[dict], record
                 "source_name": source["name"] if source else None,
                 "company_id": source["company_id"] if source else None,
                 "company_name": source["company_name"] if source else None,
+                "schedule": source.get("schedule") if source else None,
             }
         )
     return enriched
+
+
+def build_recent_source_runs(settings: Settings, source_ids: list[str], limit: int = 40) -> list[dict]:
+    source_id_set = set(source_ids)
+    runs = [
+        record
+        for record in load_source_runs(settings)
+        if record["source_id"] in source_id_set
+    ]
+    runs = sorted(runs, key=lambda item: parse_iso_datetime(item["captured_at"]), reverse=True)
+    return [
+        {
+            "run_record_id": record["run_record_id"],
+            "source_id": record["source_id"],
+            "source_name": record.get("source_name"),
+            "category": record.get("category"),
+            "company_id": record.get("company_id"),
+            "company_name": record.get("company_name"),
+            "captured_at": record["captured_at"],
+            "capture_status": record["capture_status"],
+            "change_state": record.get("change_state"),
+            "snapshot_persisted": record.get("snapshot_persisted"),
+            "observed_snapshot_id": record.get("observed_snapshot_id"),
+            "canonical_snapshot_id": record.get("canonical_snapshot_id"),
+            "duplicate_of_snapshot_id": record.get("duplicate_of_snapshot_id"),
+            "target_url": record.get("target_url"),
+            "run": record.get("run"),
+        }
+        for record in runs[:limit]
+    ]
 
 
 def build_market_signal_category_status(
@@ -1592,11 +1672,11 @@ def build_signal_registry(
     dedup_history = {}
     for occurrence in history_occurrences:
         if occurrence:
-            dedup_history[(occurrence["signal_key"], occurrence["occurrence_id"])] = occurrence
+            dedup_history[(occurrence["signal_key"], occurrence.get("content_hash") or occurrence["occurrence_id"])] = occurrence
     for occurrence in current_occurrences:
         if occurrence:
             current_by_key[occurrence["signal_key"]].append(occurrence)
-            dedup_history[(occurrence["signal_key"], occurrence["occurrence_id"])] = occurrence
+            dedup_history[(occurrence["signal_key"], occurrence.get("content_hash") or occurrence["occurrence_id"])] = occurrence
     for occurrence in dedup_history.values():
         history_by_key[occurrence["signal_key"]].append(occurrence)
     overrides = load_signal_lifecycle_overrides(settings)
@@ -1618,6 +1698,10 @@ def build_signal_registry(
         registry_item = {
             **latest_occurrence,
             "lifecycle_state": lifecycle_state,
+            "history_count": len(ordered),
+            "first_seen_at": ordered[-1]["timestamp"] if ordered else latest_occurrence["timestamp"],
+            "last_seen_at": ordered[0]["timestamp"] if ordered else latest_occurrence["timestamp"],
+            "previous_seen_at": previous_occurrence["timestamp"] if previous_occurrence else None,
             "lifecycle": {
                 "state": lifecycle_state,
                 "manual_override": manual_override,
@@ -2242,13 +2326,39 @@ def build_signal_trend_history(signal_history: list[dict]) -> dict:
     }
 
 
-def build_source_run_history(source_ids: list[str], snapshots: list[dict]) -> list[dict]:
-    relevant = [
+def build_source_run_history(settings: Settings, source_ids: list[str], snapshots: list[dict]) -> list[dict]:
+    source_id_set = set(source_ids)
+    run_records = [
+        record
+        for record in load_source_runs(settings)
+        if record["source_id"] in source_id_set
+    ]
+    if run_records:
+        relevant_runs = sorted(run_records, key=lambda item: parse_iso_datetime(item["captured_at"]), reverse=True)
+        return [
+            {
+                "run_record_id": record["run_record_id"],
+                "source_id": record["source_id"],
+                "captured_at": record["captured_at"],
+                "capture_status": record["capture_status"],
+                "change_state": record.get("change_state"),
+                "snapshot_persisted": record.get("snapshot_persisted"),
+                "observed_snapshot_id": record.get("observed_snapshot_id"),
+                "canonical_snapshot_id": record.get("canonical_snapshot_id"),
+                "duplicate_of_snapshot_id": record.get("duplicate_of_snapshot_id"),
+                "file_path": record.get("file_path"),
+                "target_url": record.get("target_url"),
+                "run": record.get("run"),
+                "validation_errors": record.get("validation_errors"),
+            }
+            for record in relevant_runs[:25]
+        ]
+    relevant_snapshots = [
         snapshot
         for snapshot in snapshots
-        if snapshot["source_id"] in set(source_ids)
+        if snapshot["source_id"] in source_id_set
     ]
-    relevant = sorted(relevant, key=lambda item: parse_iso_datetime(item["captured_at"]), reverse=True)
+    relevant_snapshots = sorted(relevant_snapshots, key=lambda item: parse_iso_datetime(item["captured_at"]), reverse=True)
     return [
         {
             "snapshot_id": snapshot["snapshot_id"],
@@ -2260,7 +2370,7 @@ def build_source_run_history(source_ids: list[str], snapshots: list[dict]) -> li
             "run": snapshot.get("run"),
             "validation_errors": snapshot.get("validation_errors"),
         }
-        for snapshot in relevant[:25]
+        for snapshot in relevant_snapshots[:25]
     ]
 
 
@@ -2378,6 +2488,13 @@ def deduplicate_snapshots(snapshots: list[dict]) -> list[dict]:
 
 
 def build_market_signals_meta(settings: Settings, dataset: dict, refresh: bool) -> dict:
+    schedules = sorted(
+        {
+            source.get("schedule", {}).get("interval_minutes")
+            for source in dataset["sources"]
+            if isinstance(source.get("schedule"), dict) and isinstance(source["schedule"].get("interval_minutes"), int)
+        }
+    )
     return {
         "api_version": "v1",
         "module": "market_signals",
@@ -2391,6 +2508,17 @@ def build_market_signals_meta(settings: Settings, dataset: dict, refresh: bool) 
         "active_count": len(dataset["view_items"]),
         "latest_snapshot_at": dataset["latest_snapshot_at"],
         "latest_signal_at": dataset["view_items"][0]["timestamp"] if dataset["view_items"] else None,
+        "schedule_interval_minutes": schedules[0] if len(schedules) == 1 else None,
+        "schedules": schedules,
+        "memory": {
+            "mode": "persistent",
+            "snapshot_strategy": "change_only",
+            "source_run_strategy": "append_all_runs",
+            "signal_deduplication": "signal_key + content_hash",
+            "run_count": sum(item.get("runs_total") or 0 for item in dataset["source_health"]),
+            "recent_run_count": len(dataset["recent_runs"]),
+            "snapshot_count": len(dataset["snapshots"]),
+        },
         "integrations": {
             "tinyfish": {
                 "provider": "TinyFish",
@@ -2472,6 +2600,11 @@ def read_primary_evidence_url(event: dict) -> str | None:
 
 def deduplicate_strings(values: list[str]) -> list[str]:
     return sorted({value for value in values if isinstance(value, str) and value.strip()})
+
+
+def build_market_signal_content_hash(payload: dict) -> str:
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
 
 
 def build_canonical_id(prefix: str, value: str | None) -> str | None:

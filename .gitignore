@@ -41,6 +41,10 @@ coverage.xml
 instance/
 .webassets-cache
 
+# Node / Next.js (frontend)
+node_modules/
+.next/
+
 # OS / editor
 .DS_Store
 Thumbs.db
@@ -51,3 +55,6 @@ Thumbs.db
 
 # Generated snapshot data (timestamped JSON from monitors)
 backend/data/snapshots/
+
+# API / endpoint verification outputs
+backend/data/verification/

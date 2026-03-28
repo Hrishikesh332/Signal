@@ -1,0 +1,27 @@
+{
+  "run_record_id": "source-market-finextra-news-run-28f83eb6-1ac9-457f-8484-79f295a98772",
+  "source_id": "source-market-finextra-news",
+  "source_name": "Finextra News",
+  "category": "reputation_intelligence",
+  "company_id": "market-finance",
+  "company_name": "Finance Market",
+  "captured_at": "2026-03-28T05:54:43.558Z",
+  "capture_status": "COMPLETED",
+  "target_url": "https://www.finextra.com/news/",
+  "content_fingerprint": "3f05d0c8c8d59de9179f4567155ad242b167ea8972f2938aa332d89c5be2defe",
+  "observed_snapshot_id": "source-market-finextra-news-28f83eb6-1ac9-457f-8484-79f295a98772",
+  "canonical_snapshot_id": "source-market-finextra-news-28f83eb6-1ac9-457f-8484-79f295a98772",
+  "previous_snapshot_id": null,
+  "change_state": "new",
+  "snapshot_persisted": true,
+  "duplicate_of_snapshot_id": null,
+  "run": {
+    "run_id": "28f83eb6-1ac9-457f-8484-79f295a98772",
+    "status": "COMPLETED",
+    "started_at": "2026-03-28T05:52:03.472Z",
+    "finished_at": "2026-03-28T05:54:43.558Z",
+    "num_of_steps": 9,
+    "error": null
+  },
+  "validation_errors": []
+}
