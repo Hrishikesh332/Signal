@@ -1,0 +1,53 @@
+# Secrets — never commit (.env.example is tracked on purpose)
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+.eggs/
+dist/
+build/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+
+# Type checkers / linters (if you add them later)
+.mypy_cache/
+.ruff_cache/
+
+# Flask
+instance/
+.webassets-cache
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+*.swo
+*~
+
+# Generated snapshot data (timestamped JSON from monitors)
+backend/data/snapshots/

@@ -1,0 +1,171 @@
+Build the main Dashboard page for our AI Market Sentry Platform as a real-time command center, using the attached reference image only for visual direction and mood.
+
+Visual direction:
+Create a dark, cinematic, intelligence-ops interface with a large world map as the hero surface, subtle grid overlays, atmospheric gradients, sharp panel framing, compact control bars, and restrained neon accents. The feeling should be “live monitoring terminal” rather than generic SaaS. Use deep charcoal/green-black as the base, with signal colors that map to severity:
+- critical = red
+- high = amber
+- medium = lime/green
+- low = cyan
+Typography should feel purposeful and technical, with clean sans for primary UI and a narrow/monospace accent for timestamps, labels, and telemetry.
+
+Very important:
+Do not use mock data, placeholder cards, lorem ipsum, fake map points, or hardcoded event rows.
+The UI must render only what the backend returns.
+If data is empty, show a polished empty state.
+If a source fails, show the failure honestly from the API.
+Do not invent a reputation feed because the backend does not expose a reputation module yet.
+
+Backend contract:
+Primary dashboard endpoint:
+GET /api/v1/dashboard
+Manual refresh:
+GET /api/v1/dashboard?refresh=true
+
+Available drill-down endpoints:
+GET /api/v1/growth-intelligence
+GET /api/v1/growth-intelligence/events
+GET /api/v1/growth-intelligence/history
+GET /api/v1/growth-intelligence/trends
+GET /api/v1/commerce-intelligence
+GET /api/v1/commerce-intelligence/signals
+GET /api/v1/commerce-intelligence/history
+
+The dashboard payload currently includes:
+- meta
+- kpis
+- events
+- alerts
+- sources
+- companies
+- products
+- trends
+- trend_series
+- source_health
+- map
+- growth_intelligence
+
+Use /api/v1/dashboard as the canonical page payload.
+Use the drill-down endpoints only for deeper views, drawers, or expanded module panels.
+
+Important data handling rules:
+1. meta
+Use meta.generated_at, meta.latest_snapshot_at, meta.source_count, meta.snapshot_count, and meta.integrations to drive the command-center header and system status.
+Show provider badges for TinyFish and OpenAI using meta.integrations.
+2. kpis
+Render the top KPI strip directly from dashboard.kpis.
+Each KPI item has id, label, and value.
+3. events
+Render dashboard.events as the live wire feed.
+Do not assume events always exist.
+If empty, show “No live cross-category events yet.”
+4. alerts
+Render dashboard.alerts as a compact critical/high-priority alert rail if present.
+If empty, do not fabricate alert banners.
+5. map
+Use dashboard.map as the centerpiece.
+Map payload:
+- clusters_enabled
+- cluster_radius_km
+- points
+Each point should support:
+- latitude
+- longitude
+- entity_name
+- signal_type
+- severity
+- timestamp
+- explanation
+- cluster_key
+If points are empty, show an elegant empty state directly on the map canvas such as “No geolocated signals available yet.”
+6. source_health
+Render source health as a real operational panel.
+Each item may include:
+- source_id
+- provider
+- configured
+- status
+- last_run_at
+- success_rate
+- avg_runtime_ms
+- snapshots_total
+- last_error
+If status is failed, surface last_error.code and last_error.message clearly.
+This panel is important and should feel like a real watcher-control/status board.
+7. growth_intelligence
+Render growth_intelligence as its own major dashboard module.
+It includes:
+- kpis
+- events
+- strategic_insights
+- company_rollups
+- trend_series
+Use this to power the lower intelligence panels and charts.
+Do not backfill missing growth data from anywhere else.
+
+Current backend reality:
+- The dashboard is live and returns real backend data.
+- Growth endpoints are live.
+- Commerce endpoints exist but may currently be empty depending on configured sources.
+- Reputation is not yet available in the backend and should not be mocked.
+- The map may legitimately be empty.
+- Events and alerts may legitimately be empty.
+- Source health may show TinyFish failures from real upstream runs.
+
+Dashboard layout:
+Design a full-screen command-center layout with these regions:
+- Top command bar:
+  Platform name, generated timestamp, integration status, source count, snapshot count, and a visible refresh action.
+- KPI row:
+  Use dashboard.kpis first, then include a secondary growth KPI strip from growth_intelligence.kpis.
+- Main hero:
+  Large world map occupying most of the page, with floating cluster markers, severity-based glow, and subtle scanline/grid treatment.
+- Right-side wire panel:
+  Live event feed from dashboard.events with compact cards.
+  Show severity, category, company, timestamp, and narrative/headline if available.
+- Bottom intelligence band:
+  Growth Intelligence panel with company rollups, strategic insights, and trend visualizations.
+- Source Health panel:
+  Display watcher run health, last run status, success rate, and upstream errors.
+- Optional secondary tabs:
+  Map / Wire / Growth / Sources
+  These are navigation views over the same backend payload, not fake sections.
+
+Chart requirements:
+Use the backend fields exactly.
+For growth_intelligence.trend_series, render:
+- jobs
+- products
+- funding
+- markets
+- role_clusters
+For dashboard.trend_series and dashboard.trends, render only if non-empty.
+If a series is empty, show an empty chart state rather than fake points.
+
+Interaction rules:
+- Initial load uses GET /api/v1/dashboard
+- Manual refresh button calls GET /api/v1/dashboard?refresh=true
+- Avoid aggressive auto-refresh; if polling is added, use normal GET /api/v1/dashboard, not forced refresh on every tick
+- Use smooth transitions and subtle motion, but keep the interface sharp and serious
+- Clicking a growth card or insight can open a detail drawer that pulls from growth-intelligence endpoints
+- Clicking source health can open source-specific detail if useful
+
+Design constraints:
+- No purple-heavy defaults
+- No generic card-grid SaaS look
+- No rounded toy-like widgets
+- No stock dashboard templates
+- The page should feel like a tactical intelligence surface
+- Desktop-first, but must still work well on mobile with stacked panels and a reduced map-first hierarchy
+
+Implementation constraints:
+- Build against the real backend shape exactly
+- Use null-safe rendering everywhere
+- Treat empty arrays as valid states
+- Treat failed sources as first-class UI states
+- Do not hardcode sample signals, companies, regions, or counts
+- Do not assume map points exist
+- Do not assume alerts exist
+- Do not assume reputation data exists
+
+Success criteria:
+The page should look like a live market intelligence command center inspired by the reference image, while being tightly aligned to our actual backend contract and honest about real-time availability, empty states, and source failures.
