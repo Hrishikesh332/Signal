@@ -2,6 +2,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 
 from market_monitor_api.config import Settings
+from market_monitor_api.services.api_contract import build_contract_payload, decode_cursor, paginate_records
 from market_monitor_api.services.openai_service import build_growth_insights
 from market_monitor_api.services.tinyfish import (
     build_company_catalog,
@@ -51,6 +52,7 @@ class GrowthConfigError(Exception):
 def build_growth_response(settings: Settings, refresh: bool = False, filters: dict | None = None) -> dict:
     dataset = collect_growth_dataset(settings, refresh=refresh, filters=filters or {})
     return {
+        "contract": build_contract_payload("growth_intelligence", view="overview"),
         "meta": build_growth_meta(settings, dataset, refresh),
         "kpis": build_growth_kpis(dataset),
         "events": dataset["events"],
@@ -71,9 +73,14 @@ def build_growth_events_response(
     filters: dict | None = None,
 ) -> dict:
     dataset = collect_growth_dataset(settings, refresh=refresh, filters=filters or {})
+    cursor = decode_cursor((filters or {}).get("cursor"))
+    limit = (filters or {}).get("limit", 50)
+    page_events, pagination = paginate_records(dataset["events"], cursor, limit)
     return {
+        "contract": build_contract_payload("growth_intelligence", view="events"),
         "meta": build_growth_meta(settings, dataset, refresh),
-        "events": dataset["events"],
+        "events": page_events,
+        "pagination": pagination,
         "strategic_insights": dataset["strategic_insights"],
         "signal_clusters": dataset["signal_clusters"],
     }
@@ -82,6 +89,7 @@ def build_growth_events_response(
 def build_growth_history_response(settings: Settings, filters: dict | None = None) -> dict:
     dataset = collect_growth_dataset(settings, refresh=False, filters=filters or {})
     return {
+        "contract": build_contract_payload("growth_intelligence", view="history"),
         "meta": build_growth_meta(settings, dataset, False),
         "snapshots": dataset["snapshots"],
         "comparisons": dataset["comparisons"],
@@ -93,6 +101,7 @@ def build_growth_history_response(settings: Settings, filters: dict | None = Non
 def build_growth_trends_response(settings: Settings, filters: dict | None = None) -> dict:
     dataset = collect_growth_dataset(settings, refresh=False, filters=filters or {})
     return {
+        "contract": build_contract_payload("growth_intelligence", view="trends"),
         "meta": build_growth_meta(settings, dataset, False),
         "kpis": build_growth_kpis(dataset),
         "trend_series": dataset["trend_series"],
@@ -191,11 +200,17 @@ def normalize_growth_snapshot(snapshot: dict, source: dict) -> dict | None:
     result = snapshot.get("result")
     if not isinstance(result, dict):
         return None
-    if not has_valid_growth_result_structure(result):
-        return None
     captured_at = read_required_string(result, "captured_at")
     if not captured_at:
         return None
+    if has_valid_growth_result_structure(result):
+        return build_normalized_growth_snapshot(snapshot, source, result, captured_at)
+    if has_valid_legacy_growth_result_structure(result):
+        return build_normalized_legacy_growth_snapshot(snapshot, source, result, captured_at)
+    return None
+
+
+def build_normalized_growth_snapshot(snapshot: dict, source: dict, result: dict, captured_at: str) -> dict | None:
     jobs = collect_job_entries(result, source)
     product_announcements = collect_product_announcements(result)
     funding_mentions = collect_funding_mentions(result)
@@ -223,6 +238,40 @@ def normalize_growth_snapshot(snapshot: dict, source: dict) -> dict | None:
         "role_cluster_counts": role_cluster_counts,
         "metrics": metrics,
         "map_points": result.get("map_points") if isinstance(result.get("map_points"), list) else [],
+        "schema_version": "v2",
+        "raw_result": result,
+    }
+
+
+def build_normalized_legacy_growth_snapshot(snapshot: dict, source: dict, result: dict, captured_at: str) -> dict | None:
+    jobs = collect_legacy_job_entries(result, source, captured_at)
+    product_announcements = []
+    funding_mentions = []
+    expansion_indicators = []
+    markets = build_market_list(jobs, expansion_indicators)
+    role_cluster_counts = build_role_cluster_counts(jobs)
+    metrics = build_growth_metrics(result, jobs, product_announcements, funding_mentions, expansion_indicators, markets)
+    if metrics is None:
+        return None
+    return {
+        "snapshot_id": snapshot["snapshot_id"],
+        "captured_at": captured_at,
+        "source_id": source["id"],
+        "source_name": source["name"],
+        "source_type": source["source_type"],
+        "company_id": source["company_id"],
+        "company_name": source["company_name"],
+        "target_url": snapshot["target_url"],
+        "schedule": source["schedule"],
+        "jobs": jobs,
+        "product_announcements": product_announcements,
+        "funding_mentions": funding_mentions,
+        "expansion_indicators": expansion_indicators,
+        "markets": markets,
+        "role_cluster_counts": role_cluster_counts,
+        "metrics": metrics,
+        "map_points": result.get("map_points") if isinstance(result.get("map_points"), list) else [],
+        "schema_version": "legacy_v1",
         "raw_result": result,
     }
 
@@ -240,6 +289,10 @@ def has_valid_growth_result_structure(result: dict) -> bool:
     return isinstance(result.get("metrics"), dict)
 
 
+def has_valid_legacy_growth_result_structure(result: dict) -> bool:
+    return isinstance(result.get("signals"), list) and isinstance(result.get("metrics"), dict)
+
+
 def collect_job_entries(result: dict, source: dict) -> list[dict]:
     raw_jobs = result.get("jobs")
     if not isinstance(raw_jobs, list):
@@ -247,6 +300,18 @@ def collect_job_entries(result: dict, source: dict) -> list[dict]:
     jobs = []
     for item in raw_jobs:
         normalized = normalize_job_entry(item, source)
+        if normalized:
+            jobs.append(normalized)
+    return jobs
+
+
+def collect_legacy_job_entries(result: dict, source: dict, captured_at: str) -> list[dict]:
+    raw_items = result.get("signals")
+    if not isinstance(raw_items, list):
+        return []
+    jobs = []
+    for item in raw_items:
+        normalized = normalize_legacy_job_entry(item, source, captured_at)
         if normalized:
             jobs.append(normalized)
     return jobs
@@ -261,6 +326,32 @@ def normalize_job_entry(item: dict, source: dict) -> dict | None:
     timestamp = read_required_string(item, "timestamp")
     evidence_url = read_required_string(item, "evidence_url")
     if not role or not team or not location or not timestamp or not evidence_url:
+        return None
+    role_clusters = assign_role_clusters(role, team)
+    return {
+        "id": build_entity_id("job", evidence_url),
+        "role": role,
+        "team": team,
+        "location": location,
+        "timestamp": timestamp,
+        "evidence_url": evidence_url,
+        "role_clusters": role_clusters,
+        "source_type": source["source_type"],
+    }
+
+
+def normalize_legacy_job_entry(item: dict, source: dict, captured_at: str) -> dict | None:
+    if not isinstance(item, dict):
+        return None
+    signal_type = read_required_string(item, "signal_type")
+    if signal_type not in {"hiring_opening", "job_posting", "role_opening"}:
+        return None
+    role = read_required_string(item, "title")
+    team = read_required_string(item, "team")
+    location = read_required_string(item, "location")
+    evidence_url = read_required_string(item, "evidence_url")
+    timestamp = read_optional_string(item, "timestamp") or captured_at
+    if not role or not team or not location or not evidence_url:
         return None
     role_clusters = assign_role_clusters(role, team)
     return {
@@ -510,6 +601,24 @@ def build_growth_comparisons(sources: list[dict], snapshots: list[dict]) -> list
     return sorted(comparisons, key=lambda item: parse_iso_datetime(item["captured_at"]), reverse=True)
 
 
+def build_growth_comparison_history(sources: list[dict], snapshots: list[dict]) -> list[dict]:
+    snapshots_by_source: dict[str, list[dict]] = defaultdict(list)
+    for snapshot in snapshots:
+        snapshots_by_source[snapshot["source_id"]].append(snapshot)
+    comparisons = []
+    source_map = {source["id"]: source for source in sources}
+    for source_id, records in snapshots_by_source.items():
+        source = source_map.get(source_id)
+        if not source:
+            continue
+        ordered = sorted(records, key=lambda item: parse_iso_datetime(item["captured_at"]))
+        for previous_snapshot, current_snapshot in zip(ordered, ordered[1:]):
+            comparison = build_source_growth_comparison(source, previous_snapshot, current_snapshot)
+            if comparison:
+                comparisons.append(comparison)
+    return sorted(comparisons, key=lambda item: parse_iso_datetime(item["captured_at"]), reverse=True)
+
+
 def build_source_growth_comparison(source: dict, previous_snapshot: dict, current_snapshot: dict) -> dict | None:
     jobs_added = build_added_entities(previous_snapshot["jobs"], current_snapshot["jobs"])
     product_announcements_added = build_added_entities(
@@ -618,6 +727,9 @@ def build_company_growth_context(comparisons: list[dict]) -> list[dict]:
                 "source_ids": set(),
                 "source_types": set(),
                 "timestamps": [],
+                "snapshot_ids": set(),
+                "extraction_timestamps": set(),
+                "evidence_urls": set(),
                 "current_jobs_count": 0,
                 "previous_jobs_count": 0,
                 "jobs_added": [],
@@ -631,6 +743,8 @@ def build_company_growth_context(comparisons: list[dict]) -> list[dict]:
         context["source_ids"].add(comparison["source_id"])
         context["source_types"].add(comparison["source_type"])
         context["timestamps"].append(comparison["captured_at"])
+        context["snapshot_ids"].update([comparison["current_snapshot_id"], comparison["previous_snapshot_id"]])
+        context["extraction_timestamps"].add(comparison["captured_at"])
         if comparison["source_type"] in {"career_page", "job_board"}:
             context["current_jobs_count"] += comparison["current_metrics"]["jobs_count"]
             context["previous_jobs_count"] += comparison["previous_metrics"]["jobs_count"]
@@ -638,6 +752,17 @@ def build_company_growth_context(comparisons: list[dict]) -> list[dict]:
         context["product_announcements_added"].extend(comparison["product_announcements_added"])
         context["funding_mentions_added"].extend(comparison["funding_mentions_added"])
         context["expansion_indicators_added"].extend(comparison["expansion_indicators_added"])
+        for item in comparison["jobs_added"]:
+            context["evidence_urls"].add(item["evidence_url"])
+        for item in comparison["product_announcements_added"]:
+            context["evidence_urls"].add(item["evidence_url"])
+            context["extraction_timestamps"].add(item["published_at"])
+        for item in comparison["funding_mentions_added"]:
+            context["evidence_urls"].add(item["evidence_url"])
+            context["extraction_timestamps"].add(item["published_at"])
+        for item in comparison["expansion_indicators_added"]:
+            context["evidence_urls"].add(item["evidence_url"])
+            context["extraction_timestamps"].add(item["published_at"])
         for market in comparison["new_markets"]:
             if market not in context["new_markets"]:
                 context["new_markets"].append(market)
@@ -653,6 +778,9 @@ def build_company_growth_context(comparisons: list[dict]) -> list[dict]:
                 **context,
                 "source_ids": sorted(context["source_ids"]),
                 "source_types": sorted(context["source_types"]),
+                "snapshot_ids": sorted(context["snapshot_ids"]),
+                "extraction_timestamps": sorted(context["extraction_timestamps"]),
+                "evidence_urls": sorted(context["evidence_urls"]),
                 "timestamp": max(context["timestamps"], key=parse_iso_datetime),
                 "role_cluster_deltas": [
                     {"cluster_name": cluster_name, **values}
@@ -662,6 +790,25 @@ def build_company_growth_context(comparisons: list[dict]) -> list[dict]:
             }
         )
     return contexts
+
+
+def build_growth_event_provenance(
+    context: dict,
+    evidence_urls: list[str] | None = None,
+    extraction_timestamps: list[str] | None = None,
+) -> dict:
+    combined_timestamps = list(context["extraction_timestamps"])
+    if extraction_timestamps:
+        combined_timestamps.extend(extraction_timestamps)
+    combined_urls = list(context["evidence_urls"])
+    if evidence_urls:
+        combined_urls.extend(evidence_urls)
+    return {
+        "source_ids": context["source_ids"],
+        "snapshot_ids": context["snapshot_ids"],
+        "extraction_timestamps": sorted({timestamp for timestamp in combined_timestamps if isinstance(timestamp, str) and timestamp}),
+        "evidence_urls": sorted({url for url in combined_urls if isinstance(url, str) and url}),
+    }
 
 
 def create_hiring_spike_signal(context: dict) -> dict | None:
@@ -702,6 +849,11 @@ def create_hiring_spike_signal(context: dict) -> dict | None:
             }
             for job in context["jobs_added"][:5]
         ],
+        "provenance": build_growth_event_provenance(
+            context,
+            evidence_urls=[job["evidence_url"] for job in context["jobs_added"][:5]],
+            extraction_timestamps=[job["timestamp"] for job in context["jobs_added"][:5]],
+        ),
     }
 
 
@@ -749,6 +901,11 @@ def create_role_cluster_signals(context: dict) -> list[dict]:
                     }
                     for job in matching_jobs[:5]
                 ],
+                "provenance": build_growth_event_provenance(
+                    context,
+                    evidence_urls=[job["evidence_url"] for job in matching_jobs[:5]],
+                    extraction_timestamps=[job["timestamp"] for job in matching_jobs[:5]],
+                ),
             }
         )
     return signals
@@ -784,6 +941,11 @@ def create_product_launch_signals(context: dict) -> list[dict]:
                         "timestamp": announcement["published_at"],
                     }
                 ],
+                "provenance": build_growth_event_provenance(
+                    context,
+                    evidence_urls=[announcement["evidence_url"]],
+                    extraction_timestamps=[announcement["published_at"]],
+                ),
             }
         )
     return signals
@@ -819,6 +981,11 @@ def create_funding_signals(context: dict) -> list[dict]:
                         "timestamp": mention["published_at"],
                     }
                 ],
+                "provenance": build_growth_event_provenance(
+                    context,
+                    evidence_urls=[mention["evidence_url"]],
+                    extraction_timestamps=[mention["published_at"]],
+                ),
             }
         )
     return signals
@@ -847,6 +1014,7 @@ def create_market_entry_signals(context: dict) -> list[dict]:
                 "cluster_name": "market_expansion",
                 "locations": [market],
                 "evidence": [],
+                "provenance": build_growth_event_provenance(context),
             }
         )
     return signals
@@ -883,9 +1051,258 @@ def create_expansion_signals(context: dict) -> list[dict]:
                         "timestamp": indicator["published_at"],
                     }
                 ],
+                "provenance": build_growth_event_provenance(
+                    context,
+                    evidence_urls=[indicator["evidence_url"]],
+                    extraction_timestamps=[indicator["published_at"]],
+                ),
             }
         )
     return signals
+
+
+def build_growth_history_event_occurrences(comparisons: list[dict]) -> list[dict]:
+    events = []
+    for comparison in comparisons:
+        events.extend(build_growth_occurrences_for_comparison(comparison))
+    return sorted(events, key=lambda item: (build_growth_severity_rank(item["severity"]), item["timestamp"]), reverse=True)
+
+
+def build_growth_occurrences_for_comparison(comparison: dict) -> list[dict]:
+    events = []
+    current_jobs_count = comparison["current_metrics"]["jobs_count"]
+    previous_jobs_count = comparison["previous_metrics"]["jobs_count"]
+    jobs_delta = current_jobs_count - previous_jobs_count
+    if comparison["source_type"] in {"career_page", "job_board"} and jobs_delta > 0:
+        delta_ratio = jobs_delta / previous_jobs_count if previous_jobs_count else 1.0
+        if jobs_delta >= 3 or delta_ratio >= 0.15:
+            events.append(
+                {
+                    "id": f"{comparison['comparison_id']}::hiring_spike",
+                    "signal_type": "hiring_spike",
+                    "category": "growth_intelligence",
+                    "severity": build_hiring_severity(jobs_delta, delta_ratio),
+                    "company_id": comparison["company_id"],
+                    "company_name": comparison["company_name"],
+                    "source_ids": [comparison["source_id"]],
+                    "source_types": [comparison["source_type"]],
+                    "timestamp": comparison["captured_at"],
+                    "title": f"{comparison['company_name']} hiring activity increased",
+                    "summary": (
+                        f"Open roles increased from {previous_jobs_count} to {current_jobs_count} on {comparison['source_name']}."
+                    ),
+                    "current_value": current_jobs_count,
+                    "previous_value": previous_jobs_count,
+                    "delta": jobs_delta,
+                    "delta_ratio": round(delta_ratio, 4),
+                    "cluster_name": "hiring",
+                    "locations": sorted(
+                        {
+                            job["location"]
+                            for job in comparison["jobs_added"]
+                            if normalize_location_label(job["location"])
+                        }
+                    ),
+                    "evidence": [
+                        {
+                            "label": job["role"],
+                            "url": job["evidence_url"],
+                            "location": job["location"],
+                            "timestamp": job["timestamp"],
+                        }
+                        for job in comparison["jobs_added"][:5]
+                    ],
+                    "provenance": {
+                        "source_ids": [comparison["source_id"]],
+                        "snapshot_ids": [
+                            comparison["current_snapshot_id"],
+                            comparison["previous_snapshot_id"],
+                        ],
+                        "extraction_timestamps": [comparison["captured_at"]],
+                    },
+                }
+            )
+    for delta in comparison["role_cluster_deltas"]:
+        events.append(
+            {
+                "id": f"{comparison['comparison_id']}::role_cluster::{delta['cluster_name']}",
+                "signal_type": "role_cluster_surge",
+                "category": "growth_intelligence",
+                "severity": build_role_cluster_severity(delta["delta"]),
+                "company_id": comparison["company_id"],
+                "company_name": comparison["company_name"],
+                "source_ids": [comparison["source_id"]],
+                "source_types": [comparison["source_type"]],
+                "timestamp": comparison["captured_at"],
+                "title": f"{comparison['company_name']} increased {delta['cluster_name']} hiring",
+                "summary": (
+                    f"{delta['cluster_name'].replace('_', ' ').title()} roles increased by {delta['delta']} on "
+                    f"{comparison['source_name']}."
+                ),
+                "current_value": delta["current_value"],
+                "previous_value": delta["previous_value"],
+                "delta": delta["delta"],
+                "delta_ratio": round(delta["delta"] / delta["previous_value"], 4) if delta["previous_value"] else 1.0,
+                "cluster_name": delta["cluster_name"],
+                "locations": [],
+                "evidence": [],
+                "provenance": {
+                    "source_ids": [comparison["source_id"]],
+                    "snapshot_ids": [
+                        comparison["current_snapshot_id"],
+                        comparison["previous_snapshot_id"],
+                    ],
+                    "extraction_timestamps": [comparison["captured_at"]],
+                },
+            }
+        )
+    for announcement in comparison["product_announcements_added"]:
+        events.append(
+            {
+                "id": f"{comparison['comparison_id']}::{announcement['id']}",
+                "signal_type": "product_launch",
+                "category": "growth_intelligence",
+                "severity": "high",
+                "company_id": comparison["company_id"],
+                "company_name": comparison["company_name"],
+                "source_ids": [comparison["source_id"]],
+                "source_types": [comparison["source_type"]],
+                "timestamp": announcement["published_at"],
+                "title": announcement["title"],
+                "summary": announcement["summary"] or "Product-facing announcement detected.",
+                "current_value": 1,
+                "previous_value": 0,
+                "delta": 1,
+                "delta_ratio": 1.0,
+                "cluster_name": "product",
+                "locations": [],
+                "evidence": [
+                    {
+                        "label": announcement["title"],
+                        "url": announcement["evidence_url"],
+                        "location": None,
+                        "timestamp": announcement["published_at"],
+                    }
+                ],
+                "provenance": {
+                    "source_ids": [comparison["source_id"]],
+                    "snapshot_ids": [
+                        comparison["current_snapshot_id"],
+                        comparison["previous_snapshot_id"],
+                    ],
+                    "extraction_timestamps": [comparison["captured_at"], announcement["published_at"]],
+                },
+            }
+        )
+    for mention in comparison["funding_mentions_added"]:
+        events.append(
+            {
+                "id": f"{comparison['comparison_id']}::{mention['id']}",
+                "signal_type": "funding_mention",
+                "category": "growth_intelligence",
+                "severity": "high",
+                "company_id": comparison["company_id"],
+                "company_name": comparison["company_name"],
+                "source_ids": [comparison["source_id"]],
+                "source_types": [comparison["source_type"]],
+                "timestamp": mention["published_at"],
+                "title": mention["title"],
+                "summary": mention["summary"] or "Funding-related language detected.",
+                "current_value": 1,
+                "previous_value": 0,
+                "delta": 1,
+                "delta_ratio": 1.0,
+                "cluster_name": "funding",
+                "locations": [],
+                "evidence": [
+                    {
+                        "label": mention["title"],
+                        "url": mention["evidence_url"],
+                        "location": None,
+                        "timestamp": mention["published_at"],
+                    }
+                ],
+                "provenance": {
+                    "source_ids": [comparison["source_id"]],
+                    "snapshot_ids": [
+                        comparison["current_snapshot_id"],
+                        comparison["previous_snapshot_id"],
+                    ],
+                    "extraction_timestamps": [comparison["captured_at"], mention["published_at"]],
+                },
+            }
+        )
+    for market in comparison["new_markets"]:
+        events.append(
+            {
+                "id": f"{comparison['comparison_id']}::market::{market}",
+                "signal_type": "market_entry",
+                "category": "growth_intelligence",
+                "severity": "medium",
+                "company_id": comparison["company_id"],
+                "company_name": comparison["company_name"],
+                "source_ids": [comparison["source_id"]],
+                "source_types": [comparison["source_type"]],
+                "timestamp": comparison["captured_at"],
+                "title": f"{comparison['company_name']} showed activity in a new market",
+                "summary": f"New location signal detected in {market}.",
+                "current_value": 1,
+                "previous_value": 0,
+                "delta": 1,
+                "delta_ratio": 1.0,
+                "cluster_name": "market_expansion",
+                "locations": [market],
+                "evidence": [],
+                "provenance": {
+                    "source_ids": [comparison["source_id"]],
+                    "snapshot_ids": [
+                        comparison["current_snapshot_id"],
+                        comparison["previous_snapshot_id"],
+                    ],
+                    "extraction_timestamps": [comparison["captured_at"]],
+                },
+            }
+        )
+    for indicator in comparison["expansion_indicators_added"]:
+        location = normalize_location_label(indicator["location"])
+        events.append(
+            {
+                "id": f"{comparison['comparison_id']}::{indicator['id']}",
+                "signal_type": "geographic_expansion",
+                "category": "growth_intelligence",
+                "severity": "medium",
+                "company_id": comparison["company_id"],
+                "company_name": comparison["company_name"],
+                "source_ids": [comparison["source_id"]],
+                "source_types": [comparison["source_type"]],
+                "timestamp": indicator["published_at"],
+                "title": indicator["title"],
+                "summary": indicator["summary"] or "Expansion-related language detected.",
+                "current_value": 1,
+                "previous_value": 0,
+                "delta": 1,
+                "delta_ratio": 1.0,
+                "cluster_name": "market_expansion",
+                "locations": [location] if location else [],
+                "evidence": [
+                    {
+                        "label": indicator["title"],
+                        "url": indicator["evidence_url"],
+                        "location": location,
+                        "timestamp": indicator["published_at"],
+                    }
+                ],
+                "provenance": {
+                    "source_ids": [comparison["source_id"]],
+                    "snapshot_ids": [
+                        comparison["current_snapshot_id"],
+                        comparison["previous_snapshot_id"],
+                    ],
+                    "extraction_timestamps": [comparison["captured_at"], indicator["published_at"]],
+                },
+            }
+        )
+    return events
 
 
 def build_hiring_severity(delta: int, delta_ratio: float) -> str:
@@ -1075,6 +1492,7 @@ def build_growth_meta(settings: Settings, dataset: dict, refresh: bool) -> dict:
     return {
         "api_version": "v1",
         "module": "growth_intelligence",
+        "contract_version": build_contract_payload("growth_intelligence")["contract_version"],
         "generated_at": to_iso_timestamp(datetime.now(timezone.utc)),
         "refresh_requested": refresh,
         "source_count": len(dataset["sources"]),

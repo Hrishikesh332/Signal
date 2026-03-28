@@ -1,0 +1,35 @@
+{
+  "generated_at": "2026-03-28",
+  "items": [
+    {
+      "endpoint": "/api/v1/market-signals?limit=2",
+      "status_code": 200,
+      "ok": true,
+      "file_path": "/Users/hrishikesh/Desktop/untitled folder 7/backend/data/verification/api_responses/2026-03-28/market_signals_limit_2.json"
+    },
+    {
+      "endpoint": "/api/v1/growth-intelligence/events?limit=2",
+      "status_code": 200,
+      "ok": true,
+      "file_path": "/Users/hrishikesh/Desktop/untitled folder 7/backend/data/verification/api_responses/2026-03-28/growth_intelligence_events_limit_2.json"
+    },
+    {
+      "endpoint": "/api/v1/commerce-intelligence/signals?limit=2",
+      "status_code": 200,
+      "ok": true,
+      "file_path": "/Users/hrishikesh/Desktop/untitled folder 7/backend/data/verification/api_responses/2026-03-28/commerce_intelligence_signals_limit_2.json"
+    },
+    {
+      "endpoint": "/api/v1/watcher-qa",
+      "status_code": 200,
+      "ok": true,
+      "file_path": "/Users/hrishikesh/Desktop/untitled folder 7/backend/data/verification/api_responses/2026-03-28/watcher_qa.json"
+    },
+    {
+      "endpoint": "/api/v1/dashboard",
+      "status_code": 200,
+      "ok": true,
+      "file_path": "/Users/hrishikesh/Desktop/untitled folder 7/backend/data/verification/api_responses/2026-03-28/dashboard.json"
+    }
+  ]
+}

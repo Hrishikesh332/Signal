@@ -460,7 +460,9 @@ def load_snapshots(settings: Settings) -> list[dict]:
         return []
     snapshots = []
     for file_path in sorted(snapshot_root.rglob("*.json")):
-        snapshots.append(json.loads(file_path.read_text()))
+        snapshot = json.loads(file_path.read_text())
+        snapshot["file_path"] = str(file_path)
+        snapshots.append(snapshot)
     return sort_snapshots(snapshots)
 
 

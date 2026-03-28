@@ -1,0 +1,696 @@
+{
+  "endpoint": "/api/v1/dashboard",
+  "status_code": 200,
+  "ok": true,
+  "response": {
+    "alerts": [],
+    "companies": [
+      {
+        "id": "company-openai",
+        "name": "OpenAI",
+        "source_ids": [
+          "source-growth-openai-careers",
+          "source-growth-openai-news"
+        ],
+        "tracked_categories": [
+          "growth_intelligence"
+        ]
+      }
+    ],
+    "contract": {
+      "contract_version": "2026-03-28",
+      "enums": {
+        "categories": [
+          "commerce_intelligence",
+          "growth_intelligence",
+          "reputation_intelligence"
+        ],
+        "severity": [
+          "critical",
+          "high",
+          "medium",
+          "low"
+        ],
+        "signal_lifecycle_state": [
+          "new",
+          "updated",
+          "resolved",
+          "suppressed",
+          "confirmed"
+        ],
+        "source_health_status": [
+          "healthy",
+          "failed",
+          "validation_error",
+          "not_run"
+        ],
+        "wire_level": [
+          "high",
+          "elevated",
+          "watch"
+        ]
+      },
+      "module": "dashboard",
+      "view": "overview"
+    },
+    "events": [],
+    "growth_intelligence": {
+      "company_rollups": [],
+      "events": [],
+      "kpis": [
+        {
+          "id": "growth_events",
+          "label": "Growth Events",
+          "value": 0
+        },
+        {
+          "id": "growth_insights",
+          "label": "Growth Insights",
+          "value": 0
+        },
+        {
+          "id": "tracked_jobs",
+          "label": "Tracked Jobs",
+          "value": 0
+        },
+        {
+          "id": "tracked_growth_companies",
+          "label": "Growth Companies",
+          "value": 1
+        }
+      ],
+      "strategic_insights": [],
+      "trend_series": {
+        "funding": [],
+        "jobs": [],
+        "markets": [],
+        "products": [],
+        "role_clusters": []
+      }
+    },
+    "kpis": [
+      {
+        "id": "active_alerts",
+        "label": "Active Alerts",
+        "value": 0
+      },
+      {
+        "id": "events_last_24h",
+        "label": "Events (24h)",
+        "value": 0
+      },
+      {
+        "id": "healthy_sources",
+        "label": "Healthy Sources",
+        "value": 0
+      },
+      {
+        "id": "snapshots_stored",
+        "label": "Snapshots Stored",
+        "value": 8
+      }
+    ],
+    "map": {
+      "cluster_radius_km": 25,
+      "clusters_enabled": true,
+      "points": []
+    },
+    "meta": {
+      "api_version": "v1",
+      "contract_version": "2026-03-28",
+      "entity_types": [
+        "events",
+        "alerts",
+        "sources",
+        "companies",
+        "products",
+        "trends"
+      ],
+      "generated_at": "2026-03-28T03:55:45Z",
+      "integrations": {
+        "openai": {
+          "base_url": "https://api.openai.com/v1",
+          "configured": true,
+          "model": "gpt-4o-mini",
+          "provider": "OpenAI",
+          "timeout_seconds": 60
+        },
+        "tinyfish": {
+          "base_url": "https://agent.tinyfish.ai",
+          "configured": true,
+          "provider": "TinyFish",
+          "timeout_seconds": 110
+        }
+      },
+      "latest_snapshot_at": "2026-03-28T03:13:46Z",
+      "platform": "AI Market Sentry Platform",
+      "refresh_requested": false,
+      "snapshot_count": 8,
+      "snapshot_store_dir": "backend/data/snapshots",
+      "snapshot_strategy": {
+        "comparison_windows": [
+          "previous_snapshot",
+          "historical_store"
+        ],
+        "mode": "append_only",
+        "timestamp_field": "captured_at"
+      },
+      "source_config_file": "backend/config/sources.json",
+      "source_count": 2
+    },
+    "products": [],
+    "source_health": [
+      {
+        "avg_runtime_ms": 14476,
+        "configured": true,
+        "last_error": {
+          "code": "network_error",
+          "message": "[Errno 8] nodename nor servname provided, or not known"
+        },
+        "last_run_at": "2026-03-28T03:13:46Z",
+        "provider": "TinyFish",
+        "snapshots_total": 7,
+        "source_id": "source-growth-openai-careers",
+        "status": "failed",
+        "success_rate": 0.1429
+      },
+      {
+        "avg_runtime_ms": 0,
+        "configured": true,
+        "last_error": {
+          "code": "network_error",
+          "message": "[Errno 8] nodename nor servname provided, or not known"
+        },
+        "last_run_at": "2026-03-28T03:13:46Z",
+        "provider": "TinyFish",
+        "snapshots_total": 1,
+        "source_id": "source-growth-openai-news",
+        "status": "failed",
+        "success_rate": 0.0
+      }
+    ],
+    "sources": [
+      {
+        "browser_profile": "lite",
+        "category": "growth_intelligence",
+        "company_id": "company-openai",
+        "company_name": "OpenAI",
+        "credential_item_ids": [],
+        "error_handling": {
+          "layout_changed": {
+            "action": "return_partial_result",
+            "emit_status": "failed"
+          },
+          "schema_validation_failed": {
+            "action": "store_raw_payload",
+            "emit_status": "validation_error"
+          },
+          "timeout": {
+            "action": "retry",
+            "emit_status": "failed",
+            "max_retries": 2
+          }
+        },
+        "goal": "Visit the public OpenAI careers search page and extract current job postings. Return structured growth data with all visible jobs, including role, team, location, timestamp, and evidence URL. Also return metrics with growth equal to the total visible job count and return any confident map points only when the page itself gives explicit location evidence.",
+        "id": "source-growth-openai-careers",
+        "name": "OpenAI Careers Search",
+        "output_schema": {
+          "properties": {
+            "captured_at": {
+              "type": "string"
+            },
+            "company": {
+              "type": "string"
+            },
+            "expansion_indicators": {
+              "items": {
+                "properties": {
+                  "evidence_url": {
+                    "type": "string"
+                  },
+                  "location": {
+                    "type": "string"
+                  },
+                  "published_at": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "title",
+                  "location",
+                  "published_at",
+                  "evidence_url"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "funding_mentions": {
+              "items": {
+                "properties": {
+                  "evidence_url": {
+                    "type": "string"
+                  },
+                  "published_at": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "title",
+                  "published_at",
+                  "evidence_url"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "jobs": {
+              "items": {
+                "properties": {
+                  "evidence_url": {
+                    "type": "string"
+                  },
+                  "location": {
+                    "type": "string"
+                  },
+                  "team": {
+                    "type": "string"
+                  },
+                  "timestamp": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "title",
+                  "team",
+                  "location",
+                  "timestamp",
+                  "evidence_url"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "map_points": {
+              "items": {
+                "properties": {
+                  "cluster_key": {
+                    "type": "string"
+                  },
+                  "entity_name": {
+                    "type": "string"
+                  },
+                  "explanation": {
+                    "type": "string"
+                  },
+                  "latitude": {
+                    "type": "number"
+                  },
+                  "longitude": {
+                    "type": "number"
+                  },
+                  "severity": {
+                    "type": "string"
+                  },
+                  "signal_type": {
+                    "type": "string"
+                  },
+                  "timestamp": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "latitude",
+                  "longitude",
+                  "entity_name",
+                  "signal_type",
+                  "severity",
+                  "timestamp",
+                  "explanation"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "metrics": {
+              "properties": {
+                "growth": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "growth"
+              ],
+              "type": "object"
+            },
+            "product_announcements": {
+              "items": {
+                "properties": {
+                  "evidence_url": {
+                    "type": "string"
+                  },
+                  "published_at": {
+                    "type": "string"
+                  },
+                  "summary": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "title",
+                  "published_at",
+                  "evidence_url"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "captured_at",
+            "company",
+            "jobs",
+            "product_announcements",
+            "funding_mentions",
+            "expansion_indicators",
+            "metrics",
+            "map_points"
+          ],
+          "type": "object"
+        },
+        "product_id": null,
+        "product_name": null,
+        "proxy_config": {
+          "country_code": "US",
+          "enabled": true
+        },
+        "schedule": {
+          "interval_minutes": 360
+        },
+        "source_type": "career_page",
+        "stop_conditions": [
+          "Stop after up to 50 visible roles are extracted.",
+          "Stop when pagination or infinite scroll yields no new roles.",
+          "Stop after two consecutive page load failures."
+        ],
+        "target_url": "https://openai.com/careers/search/",
+        "use_vault": false,
+        "watcher": {
+          "browser_profile": "lite",
+          "configured": true,
+          "endpoint": "https://agent.tinyfish.ai/v1/automation/run",
+          "provider": "TinyFish"
+        }
+      },
+      {
+        "browser_profile": "lite",
+        "category": "growth_intelligence",
+        "company_id": "company-openai",
+        "company_name": "OpenAI",
+        "credential_item_ids": [],
+        "error_handling": {
+          "layout_changed": {
+            "action": "return_partial_result",
+            "emit_status": "failed"
+          },
+          "schema_validation_failed": {
+            "action": "store_raw_payload",
+            "emit_status": "validation_error"
+          },
+          "timeout": {
+            "action": "retry",
+            "emit_status": "failed",
+            "max_retries": 2
+          }
+        },
+        "goal": "Visit the public OpenAI news index and extract structured growth signals from recent items. Capture product announcements, funding mentions, and geographic expansion indicators from the visible news items and linked summaries when available. Return jobs as an empty array unless the news item itself explicitly mentions hiring. Return metrics with growth equal to the combined count of product announcements, funding mentions, and expansion indicators.",
+        "id": "source-growth-openai-news",
+        "name": "OpenAI Newsroom",
+        "output_schema": {
+          "properties": {
+            "captured_at": {
+              "type": "string"
+            },
+            "company": {
+              "type": "string"
+            },
+            "expansion_indicators": {
+              "items": {
+                "properties": {
+                  "evidence_url": {
+                    "type": "string"
+                  },
+                  "location": {
+                    "type": "string"
+                  },
+                  "published_at": {
+                    "type": "string"
+                  },
+                  "signal_type": {
+                    "type": "string"
+                  },
+                  "summary": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "title",
+                  "location",
+                  "published_at",
+                  "evidence_url"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "funding_mentions": {
+              "items": {
+                "properties": {
+                  "evidence_url": {
+                    "type": "string"
+                  },
+                  "published_at": {
+                    "type": "string"
+                  },
+                  "signal_type": {
+                    "type": "string"
+                  },
+                  "summary": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "title",
+                  "published_at",
+                  "evidence_url"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "jobs": {
+              "items": {
+                "properties": {
+                  "evidence_url": {
+                    "type": "string"
+                  },
+                  "location": {
+                    "type": "string"
+                  },
+                  "team": {
+                    "type": "string"
+                  },
+                  "timestamp": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "title",
+                  "team",
+                  "location",
+                  "timestamp",
+                  "evidence_url"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "map_points": {
+              "items": {
+                "properties": {
+                  "cluster_key": {
+                    "type": "string"
+                  },
+                  "entity_name": {
+                    "type": "string"
+                  },
+                  "explanation": {
+                    "type": "string"
+                  },
+                  "latitude": {
+                    "type": "number"
+                  },
+                  "longitude": {
+                    "type": "number"
+                  },
+                  "severity": {
+                    "type": "string"
+                  },
+                  "signal_type": {
+                    "type": "string"
+                  },
+                  "timestamp": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "latitude",
+                  "longitude",
+                  "entity_name",
+                  "signal_type",
+                  "severity",
+                  "timestamp",
+                  "explanation"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "metrics": {
+              "properties": {
+                "growth": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "growth"
+              ],
+              "type": "object"
+            },
+            "product_announcements": {
+              "items": {
+                "properties": {
+                  "evidence_url": {
+                    "type": "string"
+                  },
+                  "product_name": {
+                    "type": "string"
+                  },
+                  "published_at": {
+                    "type": "string"
+                  },
+                  "signal_type": {
+                    "type": "string"
+                  },
+                  "summary": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "title",
+                  "published_at",
+                  "evidence_url"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "captured_at",
+            "company",
+            "jobs",
+            "product_announcements",
+            "funding_mentions",
+            "expansion_indicators",
+            "metrics",
+            "map_points"
+          ],
+          "type": "object"
+        },
+        "product_id": null,
+        "product_name": null,
+        "proxy_config": {
+          "country_code": "US",
+          "enabled": true
+        },
+        "schedule": {
+          "interval_minutes": 720
+        },
+        "source_type": "press_release",
+        "stop_conditions": [
+          "Stop after the newest 30 visible news items are processed.",
+          "Stop when no new items appear after one pagination cycle.",
+          "Stop after two consecutive article extraction failures."
+        ],
+        "target_url": "https://openai.com/news/",
+        "use_vault": false,
+        "watcher": {
+          "browser_profile": "lite",
+          "configured": true,
+          "endpoint": "https://agent.tinyfish.ai/v1/automation/run",
+          "provider": "TinyFish"
+        }
+      }
+    ],
+    "trend_series": {
+      "growth": [
+        {
+          "company_id": "company-openai",
+          "source_id": "source-growth-openai-careers",
+          "timestamp": "2026-03-27T23:40:43.338Z",
+          "value": 50
+        }
+      ],
+      "price": [],
+      "sentiment": []
+    },
+    "trends": [
+      {
+        "delta": null,
+        "direction": null,
+        "id": "trend-price",
+        "label": "Price",
+        "points": 0
+      },
+      {
+        "delta": null,
+        "direction": null,
+        "id": "trend-sentiment",
+        "label": "Sentiment",
+        "points": 0
+      },
+      {
+        "delta": null,
+        "direction": null,
+        "id": "trend-growth",
+        "label": "Growth",
+        "points": 1
+      }
+    ]
+  }
+}

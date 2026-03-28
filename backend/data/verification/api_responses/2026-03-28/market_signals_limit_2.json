@@ -1,0 +1,308 @@
+{
+  "endpoint": "/api/v1/market-signals?limit=2",
+  "status_code": 200,
+  "ok": true,
+  "response": {
+    "category_status": [
+      {
+        "active_count": 0,
+        "category": "commerce_intelligence",
+        "error": null,
+        "latest_snapshot_at": null,
+        "snapshot_count": 0,
+        "source_count": 0,
+        "status": "not_configured"
+      },
+      {
+        "active_count": 0,
+        "category": "growth_intelligence",
+        "error": {
+          "code": "network_error",
+          "message": "[Errno 8] nodename nor servname provided, or not known"
+        },
+        "latest_snapshot_at": null,
+        "snapshot_count": 0,
+        "source_count": 2,
+        "status": "degraded"
+      }
+    ],
+    "companies": [
+      {
+        "categories": [
+          "growth_intelligence"
+        ],
+        "company_id": "company-openai",
+        "company_name": "OpenAI",
+        "geography": null,
+        "product_category": null,
+        "sector": null
+      }
+    ],
+    "contract": {
+      "contract_version": "2026-03-28",
+      "enums": {
+        "categories": [
+          "commerce_intelligence",
+          "growth_intelligence",
+          "reputation_intelligence"
+        ],
+        "severity": [
+          "critical",
+          "high",
+          "medium",
+          "low"
+        ],
+        "signal_lifecycle_state": [
+          "new",
+          "updated",
+          "resolved",
+          "suppressed",
+          "confirmed"
+        ],
+        "source_health_status": [
+          "healthy",
+          "failed",
+          "validation_error",
+          "not_run"
+        ],
+        "wire_level": [
+          "high",
+          "elevated",
+          "watch"
+        ]
+      },
+      "module": "market_signals",
+      "view": "wire"
+    },
+    "correlations": [],
+    "entities": {
+      "companies": [
+        {
+          "categories": [
+            "growth_intelligence"
+          ],
+          "company_id": "company-openai",
+          "company_name": "OpenAI",
+          "geography": null,
+          "peer_cohort_key": "unknown::unknown::unknown",
+          "product_category": null,
+          "sector": null,
+          "source_ids": [
+            "source-growth-openai-careers",
+            "source-growth-openai-news"
+          ]
+        }
+      ],
+      "competitors": [],
+      "markets": [],
+      "products": [],
+      "regions": [],
+      "skus": []
+    },
+    "facets": {
+      "categories": [],
+      "lifecycle_states": [],
+      "locations": [],
+      "marketplaces": [],
+      "severities": [],
+      "signal_types": [],
+      "wire_levels": [
+        "high",
+        "elevated",
+        "watch"
+      ]
+    },
+    "map": {
+      "cluster_radius_km": 25,
+      "clusters": [],
+      "clusters_enabled": true,
+      "points": []
+    },
+    "meta": {
+      "active_count": 0,
+      "api_version": "v1",
+      "company_count": 1,
+      "contract_version": "2026-03-28",
+      "filters": {
+        "limit": 2
+      },
+      "generated_at": "2026-03-28T03:55:45Z",
+      "integrations": {
+        "openai": {
+          "base_url": "https://api.openai.com/v1",
+          "configured": true,
+          "model": "gpt-4o-mini",
+          "provider": "OpenAI"
+        },
+        "tinyfish": {
+          "base_url": "https://agent.tinyfish.ai",
+          "configured": true,
+          "provider": "TinyFish"
+        }
+      },
+      "latest_signal_at": null,
+      "latest_snapshot_at": null,
+      "module": "market_signals",
+      "refresh_requested": false,
+      "source_count": 2,
+      "view": "wire"
+    },
+    "qa": {
+      "issue_count": 0,
+      "issues": [],
+      "replay_supported": true,
+      "sources": [
+        {
+          "last_error": {
+            "code": "network_error",
+            "message": "[Errno 8] nodename nor servname provided, or not known"
+          },
+          "last_run_at": "2026-03-28T03:13:46Z",
+          "raw_payload_available": false,
+          "schema_drift": {
+            "added_fields": [],
+            "field_delta_count": 0,
+            "latest_validation_errors": [],
+            "removed_fields": []
+          },
+          "snapshots_total": 7,
+          "source_id": "source-growth-openai-careers",
+          "status": "failed"
+        },
+        {
+          "last_error": {
+            "code": "network_error",
+            "message": "[Errno 8] nodename nor servname provided, or not known"
+          },
+          "last_run_at": "2026-03-28T03:13:46Z",
+          "raw_payload_available": false,
+          "schema_drift": {
+            "added_fields": [],
+            "field_delta_count": 0,
+            "latest_validation_errors": [],
+            "removed_fields": []
+          },
+          "snapshots_total": 1,
+          "source_id": "source-growth-openai-news",
+          "status": "failed"
+        }
+      ]
+    },
+    "source_health": [
+      {
+        "avg_runtime_ms": 14476,
+        "category": "growth_intelligence",
+        "company_id": "company-openai",
+        "company_name": "OpenAI",
+        "configured": true,
+        "last_error": {
+          "code": "network_error",
+          "message": "[Errno 8] nodename nor servname provided, or not known"
+        },
+        "last_run_at": "2026-03-28T03:13:46Z",
+        "provider": "TinyFish",
+        "snapshots_total": 7,
+        "source_id": "source-growth-openai-careers",
+        "source_name": "OpenAI Careers Search",
+        "status": "failed",
+        "success_rate": 0.1429
+      },
+      {
+        "avg_runtime_ms": 0,
+        "category": "growth_intelligence",
+        "company_id": "company-openai",
+        "company_name": "OpenAI",
+        "configured": true,
+        "last_error": {
+          "code": "network_error",
+          "message": "[Errno 8] nodename nor servname provided, or not known"
+        },
+        "last_run_at": "2026-03-28T03:13:46Z",
+        "provider": "TinyFish",
+        "snapshots_total": 1,
+        "source_id": "source-growth-openai-news",
+        "source_name": "OpenAI Newsroom",
+        "status": "failed",
+        "success_rate": 0.0
+      }
+    ],
+    "sources": [
+      {
+        "category": "growth_intelligence",
+        "company_id": "company-openai",
+        "company_name": "OpenAI",
+        "geography": null,
+        "product_category": null,
+        "revenue_exposure_weight": null,
+        "sector": null,
+        "source_id": "source-growth-openai-careers",
+        "source_name": "OpenAI Careers Search",
+        "target_url": "https://openai.com/careers/search/",
+        "watcher": {
+          "browser_profile": "lite",
+          "configured": true,
+          "endpoint": "https://agent.tinyfish.ai/v1/automation/run",
+          "provider": "TinyFish"
+        }
+      },
+      {
+        "category": "growth_intelligence",
+        "company_id": "company-openai",
+        "company_name": "OpenAI",
+        "geography": null,
+        "product_category": null,
+        "revenue_exposure_weight": null,
+        "sector": null,
+        "source_id": "source-growth-openai-news",
+        "source_name": "OpenAI Newsroom",
+        "target_url": "https://openai.com/news/",
+        "watcher": {
+          "browser_profile": "lite",
+          "configured": true,
+          "endpoint": "https://agent.tinyfish.ai/v1/automation/run",
+          "provider": "TinyFish"
+        }
+      }
+    ],
+    "summary": {
+      "active_count": 0,
+      "by_category": [],
+      "by_lifecycle_state": [],
+      "by_signal_type": [],
+      "elevated_count": 0,
+      "high_priority_count": 0,
+      "watch_count": 0
+    },
+    "wire": {
+      "items": [],
+      "pagination": {
+        "count": 0,
+        "has_more": false,
+        "limit": 2,
+        "next_cursor": null
+      },
+      "stats": [
+        {
+          "id": "high_priority",
+          "label": "High+",
+          "value": 0
+        },
+        {
+          "id": "elevated",
+          "label": "Elevated",
+          "value": 0
+        },
+        {
+          "id": "watch",
+          "label": "Watch",
+          "value": 0
+        },
+        {
+          "id": "active",
+          "label": "Active",
+          "value": 0
+        }
+      ]
+    }
+  }
+}

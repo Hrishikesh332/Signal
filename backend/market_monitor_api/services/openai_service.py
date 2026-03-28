@@ -178,6 +178,13 @@ def build_event_entity(comparison: dict, analysis: dict | None, settings: Settin
         "impact_score": analysis["impact_score"] if analysis else None,
         "timestamp": comparison["captured_at"],
         "changes": comparison["changes"],
+        "provenance": {
+            "source_ids": [comparison["source_id"]],
+            "snapshot_ids": [comparison["snapshot_id"], comparison["previous_snapshot_id"]],
+            "extraction_timestamps": [comparison["captured_at"]],
+            "evidence_urls": extract_comparison_evidence_urls(comparison),
+            "target_urls": [comparison["target_url"]],
+        },
         "analysis": {
             "provider": "OpenAI",
             "model": settings.openai_model or None,
@@ -209,10 +216,32 @@ def build_alert_entities(events: list[dict]) -> list[dict]:
             "impact_score": event["impact_score"],
             "status": "open",
             "timestamp": event["timestamp"],
+            "provenance": event.get("provenance"),
         }
         for event in events
         if event.get("severity") in {"critical", "high"}
     ]
+
+
+def extract_comparison_evidence_urls(comparison: dict) -> list[str]:
+    urls = set()
+    for payload in (comparison.get("current"), comparison.get("previous")):
+        urls.update(extract_nested_urls(payload))
+    return sorted(urls)
+
+
+def extract_nested_urls(value) -> set[str]:
+    urls = set()
+    if isinstance(value, dict):
+        for key, child in value.items():
+            if isinstance(child, str) and key.endswith("_url") and child.strip():
+                urls.add(child.strip())
+            else:
+                urls.update(extract_nested_urls(child))
+    if isinstance(value, list):
+        for child in value:
+            urls.update(extract_nested_urls(child))
+    return urls
 
 
 def build_severity_rank(severity: str | None) -> int:
@@ -407,6 +436,7 @@ def build_growth_insights(
         return []
     insights = analysis_payload.get("insights", [])
     cluster_map = {cluster["id"]: cluster for cluster in signal_clusters}
+    event_map = {event["id"]: event for event in events}
     normalized_insights = []
     for insight in insights:
         if not isinstance(insight, dict):
@@ -440,9 +470,32 @@ def build_growth_insights(
                 "summary": summary.strip(),
                 "confidence_score": confidence_score,
                 "impact_score": impact_score,
+                "provenance": build_growth_insight_provenance(signal_ids, event_map),
             }
         )
     return normalized_insights
+
+
+def build_growth_insight_provenance(signal_ids: list[str], event_map: dict[str, dict]) -> dict:
+    source_ids = set()
+    snapshot_ids = set()
+    extraction_timestamps = set()
+    evidence_urls = set()
+    for signal_id in signal_ids:
+        event = event_map.get(signal_id)
+        if not event:
+            continue
+        provenance = event.get("provenance") or {}
+        source_ids.update(provenance.get("source_ids", []))
+        snapshot_ids.update(provenance.get("snapshot_ids", []))
+        extraction_timestamps.update(provenance.get("extraction_timestamps", []))
+        evidence_urls.update(provenance.get("evidence_urls", []))
+    return {
+        "source_ids": sorted(source_ids),
+        "snapshot_ids": sorted(snapshot_ids),
+        "extraction_timestamps": sorted(extraction_timestamps),
+        "evidence_urls": sorted(evidence_urls),
+    }
 
 
 def build_growth_request_payload(
@@ -811,6 +864,216 @@ def build_growth_response_schema() -> dict:
                         "summary": {"type": "string"},
                         "confidence_score": {"type": "number"},
                         "impact_score": {"type": "number"},
+                    },
+                },
+            }
+        },
+    }
+
+
+def build_cross_category_correlations(
+    signals: list[dict],
+    company_profiles: list[dict],
+    settings: Settings,
+) -> list[dict]:
+    if not settings.openai_configured:
+        return []
+    candidate_groups = build_cross_category_candidate_groups(signals, company_profiles)
+    if not candidate_groups:
+        return []
+    payload = build_cross_category_request_payload(candidate_groups, settings)
+    request = Request(
+        f"{settings.openai_base_url.rstrip('/')}/responses",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {settings.openai_api_key}",
+        },
+        method="POST",
+    )
+    try:
+        with urlopen(request, timeout=settings.openai_timeout_seconds) as response:
+            response_payload = json.loads(response.read().decode("utf-8"))
+    except HTTPError:
+        return []
+    except (TimeoutError, socket.timeout):
+        return []
+    except URLError:
+        return []
+    output_text = extract_openai_output_text(response_payload)
+    if not output_text:
+        return []
+    try:
+        analysis_payload = json.loads(output_text)
+    except json.JSONDecodeError:
+        return []
+    correlations = analysis_payload.get("correlations", [])
+    group_map = {group["correlation_id"]: group for group in candidate_groups}
+    normalized = []
+    for correlation in correlations:
+        if not isinstance(correlation, dict):
+            continue
+        group = group_map.get(correlation.get("correlation_id"))
+        if not group:
+            continue
+        headline = correlation.get("headline")
+        narrative = correlation.get("narrative")
+        confidence_score = correlation.get("confidence_score")
+        if not isinstance(headline, str) or not headline.strip():
+            continue
+        if not isinstance(narrative, str) or not narrative.strip():
+            continue
+        if not isinstance(confidence_score, (int, float)) or isinstance(confidence_score, bool):
+            continue
+        normalized.append(
+            {
+                "id": correlation["correlation_id"],
+                "correlation_id": correlation["correlation_id"],
+                "company_id": group["company_id"],
+                "company_name": group["company_name"],
+                "signal_ids": group["signal_ids"],
+                "categories": group["categories"],
+                "headline": headline.strip(),
+                "narrative": narrative.strip(),
+                "confidence_score": confidence_score,
+                "provenance": group["provenance"],
+            }
+        )
+    return normalized
+
+
+def build_cross_category_candidate_groups(signals: list[dict], company_profiles: list[dict]) -> list[dict]:
+    profile_map = {profile["company_id"]: profile for profile in company_profiles}
+    groups: dict[str, dict] = {}
+    for signal in signals:
+        key = signal["company_id"]
+        group = groups.setdefault(
+            key,
+            {
+                "correlation_id": f"correlation-{signal['company_id']}",
+                "company_id": signal["company_id"],
+                "company_name": signal["company_name"],
+                "signal_ids": [],
+                "categories": set(),
+                "signals": [],
+                "provenance": {
+                    "source_ids": set(),
+                    "snapshot_ids": set(),
+                    "evidence_urls": set(),
+                },
+            },
+        )
+        group["signal_ids"].append(signal["id"])
+        group["categories"].add(signal["category"])
+        group["signals"].append(
+            {
+                "signal_id": signal["id"],
+                "category": signal["category"],
+                "signal_type": signal["signal_type"],
+                "severity": signal["severity"],
+                "title": signal["title"],
+                "summary": signal["summary"],
+                "timestamp": signal["timestamp"],
+                "benchmark": signal.get("benchmark"),
+                "impact_rubric": signal.get("impact_rubric"),
+            }
+        )
+        provenance = signal.get("provenance", {})
+        for source_id in provenance.get("source_ids", []):
+            group["provenance"]["source_ids"].add(source_id)
+        for snapshot_id in provenance.get("snapshot_ids", []):
+            group["provenance"]["snapshot_ids"].add(snapshot_id)
+        for url in provenance.get("evidence_urls", []):
+            group["provenance"]["evidence_urls"].add(url)
+    candidate_groups = []
+    for group in groups.values():
+        if len(group["categories"]) < 2:
+            continue
+        profile = profile_map.get(group["company_id"], {})
+        candidate_groups.append(
+            {
+                "correlation_id": group["correlation_id"],
+                "company_id": group["company_id"],
+                "company_name": group["company_name"],
+                "signal_ids": sorted(group["signal_ids"]),
+                "categories": sorted(group["categories"]),
+                "signals": sorted(group["signals"], key=lambda item: item["timestamp"], reverse=True),
+                "company_profile": profile,
+                "provenance": {
+                    "source_ids": sorted(group["provenance"]["source_ids"]),
+                    "snapshot_ids": sorted(group["provenance"]["snapshot_ids"]),
+                    "evidence_urls": sorted(group["provenance"]["evidence_urls"]),
+                },
+            }
+        )
+    return candidate_groups
+
+
+def build_cross_category_request_payload(candidate_groups: list[dict], settings: Settings) -> dict:
+    return {
+        "model": settings.openai_model,
+        "input": [
+            {
+                "role": "developer",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": (
+                            "You correlate cross-category market intelligence signals. "
+                            "Use only the supplied evidence, benchmarks, and provenance. "
+                            "Return only JSON matching the provided schema."
+                        ),
+                    }
+                ],
+            },
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": json.dumps(
+                            {
+                                "companies": candidate_groups,
+                            },
+                            separators=(",", ":"),
+                            ensure_ascii=True,
+                        ),
+                    }
+                ],
+            },
+        ],
+        "text": {
+            "format": {
+                "type": "json_schema",
+                "name": "market_monitor_cross_category_correlations",
+                "schema": build_cross_category_response_schema(),
+            }
+        },
+    }
+
+
+def build_cross_category_response_schema() -> dict:
+    return {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["correlations"],
+        "properties": {
+            "correlations": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": [
+                        "correlation_id",
+                        "headline",
+                        "narrative",
+                        "confidence_score",
+                    ],
+                    "properties": {
+                        "correlation_id": {"type": "string"},
+                        "headline": {"type": "string"},
+                        "narrative": {"type": "string"},
+                        "confidence_score": {"type": "number"},
                     },
                 },
             }
