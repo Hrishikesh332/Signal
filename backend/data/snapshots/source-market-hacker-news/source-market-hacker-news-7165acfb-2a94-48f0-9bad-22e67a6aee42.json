@@ -1,0 +1,285 @@
+{
+  "snapshot_id": "source-market-hacker-news-7165acfb-2a94-48f0-9bad-22e67a6aee42",
+  "captured_at": "2026-03-28T05:44:40.300Z",
+  "capture_status": "COMPLETED",
+  "source_id": "source-market-hacker-news",
+  "source_name": "Hacker News Front Page",
+  "category": "reputation_intelligence",
+  "company_id": "market-tech",
+  "company_name": "Tech Market",
+  "product_id": null,
+  "product_name": null,
+  "target_url": "https://news.ycombinator.com/",
+  "goal": "Visit the public Hacker News front page and extract up to 5 latest visible tech market stories. Return only tech market signals. For each story, extract title, summary or a concise factual description from visible text, published timestamp when explicit or the page capture time when not explicit, article URL, signal type, market category, severity, mentioned companies when explicit, and explicit regions when explicit. Do not invent companies or regions.",
+  "goal_prompt": "Visit the public Hacker News front page and extract up to 5 latest visible tech market stories. Return only tech market signals. For each story, extract title, summary or a concise factual description from visible text, published timestamp when explicit or the page capture time when not explicit, article URL, signal type, market category, severity, mentioned companies when explicit, and explicit regions when explicit. Do not invent companies or regions.\n\nReturn only structured JSON that matches this schema exactly:\n{\"type\":\"object\",\"required\":[\"captured_at\",\"articles\",\"metrics\",\"map_points\"],\"properties\":{\"captured_at\":{\"type\":\"string\"},\"articles\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"required\":[\"title\",\"summary\",\"published_at\",\"article_url\",\"signal_type\",\"market_category\",\"severity\"],\"properties\":{\"title\":{\"type\":\"string\"},\"summary\":{\"type\":\"string\"},\"published_at\":{\"type\":\"string\"},\"article_url\":{\"type\":\"string\"},\"signal_type\":{\"type\":\"string\"},\"market_category\":{\"type\":\"string\"},\"severity\":{\"type\":\"string\"},\"companies\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"regions\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}}}},\"metrics\":{\"type\":\"object\",\"required\":[\"story_count\"],\"properties\":{\"story_count\":{\"type\":\"number\"}}},\"map_points\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"required\":[\"latitude\",\"longitude\",\"entity_name\",\"signal_type\",\"severity\",\"timestamp\",\"explanation\"],\"properties\":{\"latitude\":{\"type\":\"number\"},\"longitude\":{\"type\":\"number\"},\"entity_name\":{\"type\":\"string\"},\"signal_type\":{\"type\":\"string\"},\"severity\":{\"type\":\"string\"},\"timestamp\":{\"type\":\"string\"},\"explanation\":{\"type\":\"string\"},\"cluster_key\":{\"type\":\"string\"}}}}}}\n\nStop conditions:\n[\"Stop after 5 visible stories are extracted.\",\"Stop when the first page has been fully parsed and no new story rows remain.\",\"Stop after two consecutive page parsing failures.\"]\n\nStructured error handling rules:\n{\"timeout\":{\"action\":\"retry\",\"max_retries\":2,\"emit_status\":\"failed\"},\"layout_changed\":{\"action\":\"store_raw_payload\",\"emit_status\":\"failed\"},\"schema_validation_failed\":{\"action\":\"store_raw_payload\",\"emit_status\":\"validation_error\"}}",
+  "output_schema": {
+    "type": "object",
+    "required": [
+      "captured_at",
+      "articles",
+      "metrics",
+      "map_points"
+    ],
+    "properties": {
+      "captured_at": {
+        "type": "string"
+      },
+      "articles": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "title",
+            "summary",
+            "published_at",
+            "article_url",
+            "signal_type",
+            "market_category",
+            "severity"
+          ],
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "summary": {
+              "type": "string"
+            },
+            "published_at": {
+              "type": "string"
+            },
+            "article_url": {
+              "type": "string"
+            },
+            "signal_type": {
+              "type": "string"
+            },
+            "market_category": {
+              "type": "string"
+            },
+            "severity": {
+              "type": "string"
+            },
+            "companies": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "regions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "metrics": {
+        "type": "object",
+        "required": [
+          "story_count"
+        ],
+        "properties": {
+          "story_count": {
+            "type": "number"
+          }
+        }
+      },
+      "map_points": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "latitude",
+            "longitude",
+            "entity_name",
+            "signal_type",
+            "severity",
+            "timestamp",
+            "explanation"
+          ],
+          "properties": {
+            "latitude": {
+              "type": "number"
+            },
+            "longitude": {
+              "type": "number"
+            },
+            "entity_name": {
+              "type": "string"
+            },
+            "signal_type": {
+              "type": "string"
+            },
+            "severity": {
+              "type": "string"
+            },
+            "timestamp": {
+              "type": "string"
+            },
+            "explanation": {
+              "type": "string"
+            },
+            "cluster_key": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  "stop_conditions": [
+    "Stop after 5 visible stories are extracted.",
+    "Stop when the first page has been fully parsed and no new story rows remain.",
+    "Stop after two consecutive page parsing failures."
+  ],
+  "error_handling": {
+    "timeout": {
+      "action": "retry",
+      "max_retries": 2,
+      "emit_status": "failed"
+    },
+    "layout_changed": {
+      "action": "store_raw_payload",
+      "emit_status": "failed"
+    },
+    "schema_validation_failed": {
+      "action": "store_raw_payload",
+      "emit_status": "validation_error"
+    }
+  },
+  "run": {
+    "run_id": "7165acfb-2a94-48f0-9bad-22e67a6aee42",
+    "status": "COMPLETED",
+    "started_at": "2026-03-28T05:43:54.722Z",
+    "finished_at": "2026-03-28T05:44:40.300Z",
+    "num_of_steps": 2,
+    "error": null
+  },
+  "result": {
+    "captured_at": "2026-03-28",
+    "articles": [
+      {
+        "title": "AMD's Ryzen 9 9950X3D2 Dual Edition crams 208MB of cache into a single chip",
+        "summary": "AMD's new Ryzen 9 9950X3D2 Dual Edition processor features 208MB of cache in a single chip, indicating advancements in CPU technology and performance.",
+        "published_at": "2026-03-28T02:17:04",
+        "article_url": "https://arstechnica.com/gadgets/2026/03/amds-ryzen-9-9950x3d2-dual-edition-crams-208mb-of-cache-into-a-single-chip/",
+        "signal_type": "Product Launch",
+        "market_category": "Semiconductors",
+        "severity": "low",
+        "companies": [
+          "AMD"
+        ]
+      },
+      {
+        "title": "LG's new 1Hz display is the secret behind a new laptop's battery life",
+        "summary": "LG has developed a 1Hz display technology that significantly improves laptop battery life, suggesting innovation in display power efficiency.",
+        "published_at": "2026-03-23T21:18:53",
+        "article_url": "https://www.pcworld.com/article/3096432/lgs-new-1hz-display-is-the-secret-behind-a-new-laptops-battery-life.html",
+        "signal_type": "Product Innovation",
+        "market_category": "Hardware",
+        "severity": "low",
+        "companies": [
+          "LG"
+        ]
+      },
+      {
+        "title": "Telnyx package compromised on PyPI",
+        "summary": "The Telnyx Python SDK package on PyPI has been compromised, highlighting a supply chain security incident affecting developers.",
+        "published_at": "2026-03-27T08:57:02",
+        "article_url": "https://telnyx.com/resources/telnyx-python-sdk-supply-chain-security-notice-march-2026",
+        "signal_type": "Security Breach",
+        "market_category": "Cybersecurity",
+        "severity": "high",
+        "companies": [
+          "Telnyx"
+        ]
+      },
+      {
+        "title": "Colorado House passes bill to limit surveillance pricing and wage setting",
+        "summary": "The Colorado House passed a bill aimed at regulating surveillance pricing and wage-setting practices, indicating legislative action on technology's impact on economics and privacy.",
+        "published_at": "2026-03-27T20:10:42",
+        "article_url": "https://coloradonewsline.com/briefs/surveillance-pricing-wage-setting/",
+        "signal_type": "Regulation",
+        "market_category": "Tech Policy",
+        "severity": "medium",
+        "regions": [
+          "Colorado",
+          "USA"
+        ]
+      },
+      {
+        "title": "People inside Microsoft are fighting to drop Windows 11's mandatory Microsoft Account requirements during setup",
+        "summary": "There is internal disagreement within Microsoft regarding the mandatory Microsoft Account requirement for Windows 11 setup, suggesting potential changes to user onboarding and privacy policies.",
+        "published_at": "2026-03-27T13:54:35",
+        "article_url": "https://www.windowscentral.com/microsoft/windows-11/people-inside-microsoft-are-fighting-to-drop-windows-11s-mandatory-microsoft-account-requirements-during-setup",
+        "signal_type": "Corporate Policy Conflict",
+        "market_category": "Software",
+        "severity": "medium",
+        "companies": [
+          "Microsoft"
+        ]
+      }
+    ],
+    "metrics": {
+      "story_count": 5
+    },
+    "map_points": [
+      {
+        "latitude": 37.3541,
+        "longitude": -121.9552,
+        "entity_name": "AMD",
+        "signal_type": "Product Launch",
+        "severity": "low",
+        "timestamp": "2026-03-28T02:17:04",
+        "explanation": "AMD headquarters location associated with the launch of the Ryzen 9 9950X3D2 chip."
+      },
+      {
+        "latitude": 37.5665,
+        "longitude": 126.978,
+        "entity_name": "LG",
+        "signal_type": "Product Innovation",
+        "severity": "low",
+        "timestamp": "2026-03-23T21:18:53",
+        "explanation": "LG headquarters location associated with the development of the 1Hz display technology."
+      },
+      {
+        "latitude": 41.8781,
+        "longitude": -87.6298,
+        "entity_name": "Telnyx",
+        "signal_type": "Security Breach",
+        "severity": "high",
+        "timestamp": "2026-03-27T08:57:02",
+        "explanation": "Telnyx headquarters location associated with the PyPI package compromise."
+      },
+      {
+        "latitude": 39.7392,
+        "longitude": -104.9903,
+        "entity_name": "Colorado State Capitol",
+        "signal_type": "Regulation",
+        "severity": "medium",
+        "timestamp": "2026-03-27T20:10:42",
+        "explanation": "Legislative action in Colorado to regulate surveillance pricing."
+      },
+      {
+        "latitude": 47.674,
+        "longitude": -122.1215,
+        "entity_name": "Microsoft",
+        "signal_type": "Corporate Policy Conflict",
+        "severity": "medium",
+        "timestamp": "2026-03-27T13:54:35",
+        "explanation": "Microsoft headquarters location associated with internal policy debates regarding mandatory accounts."
+      }
+    ]
+  },
+  "validation_errors": [],
+  "content_fingerprint": "2572bc202dc5fed70fa7d0bfd9281dc4afe5ae19333dcd79accea08593a4d9ff",
+  "storage": {
+    "mode": "change_only",
+    "change_state": "updated",
+    "snapshot_persisted": true,
+    "canonical_snapshot_id": "source-market-hacker-news-7165acfb-2a94-48f0-9bad-22e67a6aee42",
+    "previous_snapshot_id": "source-market-hacker-news-20260328T042904Z",
+    "duplicate_of_snapshot_id": null
+  }
+}

@@ -1,0 +1,264 @@
+{
+  "snapshot_id": "source-market-hacker-news-4647e530-880b-4c50-befc-0dd0c26b6671",
+  "captured_at": "2026-03-28T05:48:04.584Z",
+  "capture_status": "COMPLETED",
+  "source_id": "source-market-hacker-news",
+  "source_name": "Hacker News Front Page",
+  "category": "reputation_intelligence",
+  "company_id": "market-tech",
+  "company_name": "Tech Market",
+  "product_id": null,
+  "product_name": null,
+  "target_url": "https://news.ycombinator.com/",
+  "goal": "Visit the public Hacker News front page and extract up to 5 latest visible tech market stories. Return only tech market signals. For each story, extract title, summary or a concise factual description from visible text, published timestamp when explicit or the page capture time when not explicit, article URL, signal type, market category, severity, mentioned companies when explicit, and explicit regions when explicit. Do not invent companies or regions.",
+  "goal_prompt": "Visit the public Hacker News front page and extract up to 5 latest visible tech market stories. Return only tech market signals. For each story, extract title, summary or a concise factual description from visible text, published timestamp when explicit or the page capture time when not explicit, article URL, signal type, market category, severity, mentioned companies when explicit, and explicit regions when explicit. Do not invent companies or regions.\n\nReturn only structured JSON that matches this schema exactly:\n{\"type\":\"object\",\"required\":[\"captured_at\",\"articles\",\"metrics\",\"map_points\"],\"properties\":{\"captured_at\":{\"type\":\"string\"},\"articles\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"required\":[\"title\",\"summary\",\"published_at\",\"article_url\",\"signal_type\",\"market_category\",\"severity\"],\"properties\":{\"title\":{\"type\":\"string\"},\"summary\":{\"type\":\"string\"},\"published_at\":{\"type\":\"string\"},\"article_url\":{\"type\":\"string\"},\"signal_type\":{\"type\":\"string\"},\"market_category\":{\"type\":\"string\"},\"severity\":{\"type\":\"string\"},\"companies\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"regions\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}}}},\"metrics\":{\"type\":\"object\",\"required\":[\"story_count\"],\"properties\":{\"story_count\":{\"type\":\"number\"}}},\"map_points\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"required\":[\"latitude\",\"longitude\",\"entity_name\",\"signal_type\",\"severity\",\"timestamp\",\"explanation\"],\"properties\":{\"latitude\":{\"type\":\"number\"},\"longitude\":{\"type\":\"number\"},\"entity_name\":{\"type\":\"string\"},\"signal_type\":{\"type\":\"string\"},\"severity\":{\"type\":\"string\"},\"timestamp\":{\"type\":\"string\"},\"explanation\":{\"type\":\"string\"},\"cluster_key\":{\"type\":\"string\"}}}}}}\n\nStop conditions:\n[\"Stop after 5 visible stories are extracted.\",\"Stop when the first page has been fully parsed and no new story rows remain.\",\"Stop after two consecutive page parsing failures.\"]\n\nStructured error handling rules:\n{\"timeout\":{\"action\":\"retry\",\"max_retries\":2,\"emit_status\":\"failed\"},\"layout_changed\":{\"action\":\"store_raw_payload\",\"emit_status\":\"failed\"},\"schema_validation_failed\":{\"action\":\"store_raw_payload\",\"emit_status\":\"validation_error\"}}",
+  "output_schema": {
+    "type": "object",
+    "required": [
+      "captured_at",
+      "articles",
+      "metrics",
+      "map_points"
+    ],
+    "properties": {
+      "captured_at": {
+        "type": "string"
+      },
+      "articles": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "title",
+            "summary",
+            "published_at",
+            "article_url",
+            "signal_type",
+            "market_category",
+            "severity"
+          ],
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "summary": {
+              "type": "string"
+            },
+            "published_at": {
+              "type": "string"
+            },
+            "article_url": {
+              "type": "string"
+            },
+            "signal_type": {
+              "type": "string"
+            },
+            "market_category": {
+              "type": "string"
+            },
+            "severity": {
+              "type": "string"
+            },
+            "companies": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "regions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "metrics": {
+        "type": "object",
+        "required": [
+          "story_count"
+        ],
+        "properties": {
+          "story_count": {
+            "type": "number"
+          }
+        }
+      },
+      "map_points": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "latitude",
+            "longitude",
+            "entity_name",
+            "signal_type",
+            "severity",
+            "timestamp",
+            "explanation"
+          ],
+          "properties": {
+            "latitude": {
+              "type": "number"
+            },
+            "longitude": {
+              "type": "number"
+            },
+            "entity_name": {
+              "type": "string"
+            },
+            "signal_type": {
+              "type": "string"
+            },
+            "severity": {
+              "type": "string"
+            },
+            "timestamp": {
+              "type": "string"
+            },
+            "explanation": {
+              "type": "string"
+            },
+            "cluster_key": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  "stop_conditions": [
+    "Stop after 5 visible stories are extracted.",
+    "Stop when the first page has been fully parsed and no new story rows remain.",
+    "Stop after two consecutive page parsing failures."
+  ],
+  "error_handling": {
+    "timeout": {
+      "action": "retry",
+      "max_retries": 2,
+      "emit_status": "failed"
+    },
+    "layout_changed": {
+      "action": "store_raw_payload",
+      "emit_status": "failed"
+    },
+    "schema_validation_failed": {
+      "action": "store_raw_payload",
+      "emit_status": "validation_error"
+    }
+  },
+  "run": {
+    "run_id": "4647e530-880b-4c50-befc-0dd0c26b6671",
+    "status": "COMPLETED",
+    "started_at": "2026-03-28T05:47:29.310Z",
+    "finished_at": "2026-03-28T05:48:04.584Z",
+    "num_of_steps": 2,
+    "error": null
+  },
+  "result": {
+    "captured_at": "2026-03-28T14:30:00Z",
+    "articles": [
+      {
+        "title": "AMD's Ryzen 9 9950X3D2 Dual Edition crams 208MB of cache into a single chip",
+        "summary": "AMD has announced the Ryzen 9 9950X3D2 Dual Edition processor, which features a significant 208MB of cache on a single chip, targeting performance improvements in cache-intensive computational tasks.",
+        "published_at": "2026-03-28T11:30:00Z",
+        "article_url": "https://arstechnica.com/gadgets/2026/03/amds-ryzen-9-9950x3d2-dual-edition-crams-208mb-of-cache-into-a-single-chip/",
+        "signal_type": "Product Launch",
+        "market_category": "Semiconductors",
+        "severity": "low",
+        "companies": [
+          "AMD"
+        ],
+        "regions": []
+      },
+      {
+        "title": "LG's new 1Hz display is the secret behind a new laptop's battery life",
+        "summary": "LG's latest 1Hz display technology is being used to enhance the battery life of new laptops by allowing the screen refresh rate to drop significantly when displaying static content.",
+        "published_at": "2026-03-28T03:30:00Z",
+        "article_url": "https://www.pcworld.com/article/3096432/lgs-new-1hz-display-is-the-secret-behind-a-new-laptops-battery-life.html",
+        "signal_type": "Product Innovation",
+        "market_category": "Computer Hardware",
+        "severity": "low",
+        "companies": [
+          "LG"
+        ],
+        "regions": []
+      },
+      {
+        "title": "Colorado House passes bill to limit surveillance pricing and wage setting",
+        "summary": "The Colorado House of Representatives has passed legislation designed to restrict corporate practices involving surveillance-based dynamic pricing and the setting of wages via surveillance data.",
+        "published_at": "2026-03-28T05:30:00Z",
+        "article_url": "https://coloradonewsline.com/briefs/surveillance-pricing-wage-setting/",
+        "signal_type": "Regulatory",
+        "market_category": "Data Privacy/Regulation",
+        "severity": "medium",
+        "companies": [],
+        "regions": [
+          "Colorado"
+        ]
+      },
+      {
+        "title": "People inside Microsoft are fighting to drop mandatory Microsoft Account",
+        "summary": "Internal advocacy within Microsoft is pushing for the removal of the requirement to have a Microsoft account during the initial setup of Windows 11, potentially changing user onboarding policies.",
+        "published_at": "2026-03-27T23:30:00Z",
+        "article_url": "https://www.windowscentral.com/microsoft/windows-11/people-inside-microsoft-are-fighting-to-drop-windows-11s-mandatory-microsoft-account-requirements-during-setup",
+        "signal_type": "Corporate Policy",
+        "market_category": "Software",
+        "severity": "low",
+        "companies": [
+          "Microsoft"
+        ],
+        "regions": []
+      },
+      {
+        "title": "\u2018Energy independence feels practical\u2019: Europeans building mini solar farms",
+        "summary": "A trend among European residents involves the construction of small-scale home solar farms to achieve energy independence and manage energy costs more effectively.",
+        "published_at": "2026-03-27T18:30:00Z",
+        "article_url": "https://www.euronews.com/2026/03/26/suddenly-energy-independence-feels-practical-europeans-are-building-mini-solar-farms-at-ho",
+        "signal_type": "Market Trend",
+        "market_category": "Renewable Energy",
+        "severity": "low",
+        "companies": [],
+        "regions": [
+          "Europe"
+        ]
+      }
+    ],
+    "metrics": {
+      "story_count": 5
+    },
+    "map_points": [
+      {
+        "latitude": 39.5501,
+        "longitude": -105.7821,
+        "entity_name": "Colorado",
+        "signal_type": "Regulatory",
+        "severity": "medium",
+        "timestamp": "2026-03-28T05:30:00Z",
+        "explanation": "Colorado House passes bill to limit surveillance pricing and wage setting.",
+        "cluster_key": "US-CO"
+      },
+      {
+        "latitude": 54.526,
+        "longitude": 15.2551,
+        "entity_name": "Europe",
+        "signal_type": "Market Trend",
+        "severity": "low",
+        "timestamp": "2026-03-27T18:30:00Z",
+        "explanation": "Europeans building mini solar farms for energy independence.",
+        "cluster_key": "EU"
+      }
+    ]
+  },
+  "validation_errors": [],
+  "content_fingerprint": "4ddc6c2c7cdd3c7bafb0c57453df21ec7a0815a5f572a5f7d8f0bfb46c8d7e22",
+  "storage": {
+    "mode": "change_only",
+    "change_state": "updated",
+    "snapshot_persisted": true,
+    "canonical_snapshot_id": "source-market-hacker-news-4647e530-880b-4c50-befc-0dd0c26b6671",
+    "previous_snapshot_id": "source-market-hacker-news-eff0a71a-fb38-40bf-8f4f-558243a51b29",
+    "duplicate_of_snapshot_id": null
+  }
+}

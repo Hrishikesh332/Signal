@@ -1,0 +1,143 @@
+{
+  "snapshot_id": "source-competitor-competitor-3b80447922a7e239-20260328T064726Z",
+  "captured_at": "2026-03-28T06:47:26Z",
+  "capture_status": "FAILED",
+  "source_id": "source-competitor-competitor-3b80447922a7e239",
+  "source_name": "Competitor Peer: PayPal Holdings, Inc.",
+  "category": "reputation_intelligence",
+  "company_id": "company-profile-3b80447922a7e239",
+  "company_name": "PayPal Holdings, Inc.",
+  "product_id": null,
+  "product_name": null,
+  "target_url": "https://www.paypal.com",
+  "goal": "Visit the provided public company website for the competitor candidate and extract a structured competitive profile. Identify the company name, homepage URL, a concise company summary, the primary market category, sector, geography, target customers, core products or services, visible differentiators, visible pricing or packaging signals, and supporting evidence URLs. Do not invent claims that are not visible on the site. Return facts that help compare PayPal Holdings, Inc. in a competitor landscape.",
+  "goal_prompt": "Visit the provided public company website for the competitor candidate and extract a structured competitive profile. Identify the company name, homepage URL, a concise company summary, the primary market category, sector, geography, target customers, core products or services, visible differentiators, visible pricing or packaging signals, and supporting evidence URLs. Do not invent claims that are not visible on the site. Return facts that help compare PayPal Holdings, Inc. in a competitor landscape.\n\nReturn only structured JSON that matches this schema exactly:\n{\"type\":\"object\",\"required\":[\"captured_at\",\"company_name\",\"homepage_url\",\"summary\",\"market_category\",\"sector\",\"geography\",\"target_customers\",\"products\",\"differentiators\",\"pricing_signals\",\"evidence_urls\"],\"properties\":{\"captured_at\":{\"type\":\"string\"},\"company_name\":{\"type\":\"string\"},\"homepage_url\":{\"type\":\"string\"},\"summary\":{\"type\":\"string\"},\"market_category\":{\"type\":\"string\"},\"sector\":{\"type\":\"string\"},\"geography\":{\"type\":\"string\"},\"target_customers\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"products\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"required\":[\"name\",\"category\",\"summary\"],\"properties\":{\"name\":{\"type\":\"string\"},\"category\":{\"type\":\"string\"},\"summary\":{\"type\":\"string\"}}}},\"differentiators\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"pricing_signals\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"evidence_urls\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}}}\n\nStop conditions:\n[\"Stop after the homepage and up to two visibly linked product, solutions, or pricing pages have been reviewed.\",\"Stop after eight relevant visible sections have been extracted.\",\"Stop after two consecutive navigation or parsing failures.\"]\n\nStructured error handling rules:\n{\"timeout\":{\"action\":\"retry\",\"max_retries\":2,\"emit_status\":\"failed\"},\"layout_changed\":{\"action\":\"store_raw_payload\",\"emit_status\":\"failed\"},\"schema_validation_failed\":{\"action\":\"store_raw_payload\",\"emit_status\":\"validation_error\"}}",
+  "output_schema": {
+    "type": "object",
+    "required": [
+      "captured_at",
+      "company_name",
+      "homepage_url",
+      "summary",
+      "market_category",
+      "sector",
+      "geography",
+      "target_customers",
+      "products",
+      "differentiators",
+      "pricing_signals",
+      "evidence_urls"
+    ],
+    "properties": {
+      "captured_at": {
+        "type": "string"
+      },
+      "company_name": {
+        "type": "string"
+      },
+      "homepage_url": {
+        "type": "string"
+      },
+      "summary": {
+        "type": "string"
+      },
+      "market_category": {
+        "type": "string"
+      },
+      "sector": {
+        "type": "string"
+      },
+      "geography": {
+        "type": "string"
+      },
+      "target_customers": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "products": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "name",
+            "category",
+            "summary"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "category": {
+              "type": "string"
+            },
+            "summary": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "differentiators": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "pricing_signals": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "evidence_urls": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "stop_conditions": [
+    "Stop after the homepage and up to two visibly linked product, solutions, or pricing pages have been reviewed.",
+    "Stop after eight relevant visible sections have been extracted.",
+    "Stop after two consecutive navigation or parsing failures."
+  ],
+  "error_handling": {
+    "timeout": {
+      "action": "retry",
+      "max_retries": 2,
+      "emit_status": "failed"
+    },
+    "layout_changed": {
+      "action": "store_raw_payload",
+      "emit_status": "failed"
+    },
+    "schema_validation_failed": {
+      "action": "store_raw_payload",
+      "emit_status": "validation_error"
+    }
+  },
+  "run": {
+    "run_id": null,
+    "status": "FAILED",
+    "started_at": "2026-03-28T06:47:26Z",
+    "finished_at": "2026-03-28T06:47:26Z",
+    "num_of_steps": null,
+    "error": {
+      "code": "timeout",
+      "message": "The read operation timed out"
+    }
+  },
+  "result": null,
+  "validation_errors": [],
+  "content_fingerprint": "fa3455d10a69641d2fecdd07258d768ecb0f8344349356aede721e6d538ea6e6",
+  "storage": {
+    "mode": "change_only",
+    "change_state": "new",
+    "snapshot_persisted": true,
+    "canonical_snapshot_id": "source-competitor-competitor-3b80447922a7e239-20260328T064726Z",
+    "previous_snapshot_id": null,
+    "duplicate_of_snapshot_id": null
+  }
+}

@@ -1,0 +1,164 @@
+{
+  "snapshot_id": "source-market-techcrunch-fintech-20260328T041114Z",
+  "captured_at": "2026-03-28T04:11:14Z",
+  "capture_status": "FAILED",
+  "source_id": "source-market-techcrunch-fintech",
+  "source_name": "TechCrunch Fintech",
+  "category": "reputation_intelligence",
+  "company_id": "market-finance",
+  "company_name": "Finance Market",
+  "product_id": null,
+  "product_name": null,
+  "target_url": "https://techcrunch.com/tag/fintech/",
+  "goal": "Visit the public TechCrunch Fintech tag page and extract the latest market-relevant articles visible on the page. Return only finance or technology market signals. For each article, extract title, summary, published timestamp, article URL, signal type, market category, severity, mentioned companies when explicit, and explicit regions when explicit. Prioritize finance classification when the article is about fintech, banking, markets, payments, insurance, or funding. Do not invent companies or regions that are not explicitly present on the page.",
+  "goal_prompt": "Visit the public TechCrunch Fintech tag page and extract the latest market-relevant articles visible on the page. Return only finance or technology market signals. For each article, extract title, summary, published timestamp, article URL, signal type, market category, severity, mentioned companies when explicit, and explicit regions when explicit. Prioritize finance classification when the article is about fintech, banking, markets, payments, insurance, or funding. Do not invent companies or regions that are not explicitly present on the page.\n\nReturn only structured JSON that matches this schema exactly:\n{\"type\":\"object\",\"required\":[\"captured_at\",\"articles\",\"metrics\",\"map_points\"],\"properties\":{\"captured_at\":{\"type\":\"string\"},\"articles\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"required\":[\"title\",\"summary\",\"published_at\",\"article_url\",\"signal_type\",\"market_category\",\"severity\"],\"properties\":{\"title\":{\"type\":\"string\"},\"summary\":{\"type\":\"string\"},\"published_at\":{\"type\":\"string\"},\"article_url\":{\"type\":\"string\"},\"signal_type\":{\"type\":\"string\"},\"market_category\":{\"type\":\"string\"},\"severity\":{\"type\":\"string\"},\"companies\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"regions\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}}}},\"metrics\":{\"type\":\"object\",\"required\":[\"story_count\"],\"properties\":{\"story_count\":{\"type\":\"number\"}}},\"map_points\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"required\":[\"latitude\",\"longitude\",\"entity_name\",\"signal_type\",\"severity\",\"timestamp\",\"explanation\"],\"properties\":{\"latitude\":{\"type\":\"number\"},\"longitude\":{\"type\":\"number\"},\"entity_name\":{\"type\":\"string\"},\"signal_type\":{\"type\":\"string\"},\"severity\":{\"type\":\"string\"},\"timestamp\":{\"type\":\"string\"},\"explanation\":{\"type\":\"string\"},\"cluster_key\":{\"type\":\"string\"}}}}}}\n\nStop conditions:\n[\"Stop after up to 20 visible articles are extracted.\",\"Stop when the first page has been fully parsed and no new article cards remain.\",\"Stop after two consecutive page parsing failures.\"]\n\nStructured error handling rules:\n{\"timeout\":{\"action\":\"retry\",\"max_retries\":2,\"emit_status\":\"failed\"},\"layout_changed\":{\"action\":\"store_raw_payload\",\"emit_status\":\"failed\"},\"schema_validation_failed\":{\"action\":\"store_raw_payload\",\"emit_status\":\"validation_error\"}}",
+  "output_schema": {
+    "type": "object",
+    "required": [
+      "captured_at",
+      "articles",
+      "metrics",
+      "map_points"
+    ],
+    "properties": {
+      "captured_at": {
+        "type": "string"
+      },
+      "articles": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "title",
+            "summary",
+            "published_at",
+            "article_url",
+            "signal_type",
+            "market_category",
+            "severity"
+          ],
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "summary": {
+              "type": "string"
+            },
+            "published_at": {
+              "type": "string"
+            },
+            "article_url": {
+              "type": "string"
+            },
+            "signal_type": {
+              "type": "string"
+            },
+            "market_category": {
+              "type": "string"
+            },
+            "severity": {
+              "type": "string"
+            },
+            "companies": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "regions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "metrics": {
+        "type": "object",
+        "required": [
+          "story_count"
+        ],
+        "properties": {
+          "story_count": {
+            "type": "number"
+          }
+        }
+      },
+      "map_points": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "latitude",
+            "longitude",
+            "entity_name",
+            "signal_type",
+            "severity",
+            "timestamp",
+            "explanation"
+          ],
+          "properties": {
+            "latitude": {
+              "type": "number"
+            },
+            "longitude": {
+              "type": "number"
+            },
+            "entity_name": {
+              "type": "string"
+            },
+            "signal_type": {
+              "type": "string"
+            },
+            "severity": {
+              "type": "string"
+            },
+            "timestamp": {
+              "type": "string"
+            },
+            "explanation": {
+              "type": "string"
+            },
+            "cluster_key": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  "stop_conditions": [
+    "Stop after up to 20 visible articles are extracted.",
+    "Stop when the first page has been fully parsed and no new article cards remain.",
+    "Stop after two consecutive page parsing failures."
+  ],
+  "error_handling": {
+    "timeout": {
+      "action": "retry",
+      "max_retries": 2,
+      "emit_status": "failed"
+    },
+    "layout_changed": {
+      "action": "store_raw_payload",
+      "emit_status": "failed"
+    },
+    "schema_validation_failed": {
+      "action": "store_raw_payload",
+      "emit_status": "validation_error"
+    }
+  },
+  "run": {
+    "run_id": null,
+    "status": "FAILED",
+    "started_at": "2026-03-28T04:11:14Z",
+    "finished_at": "2026-03-28T04:11:14Z",
+    "num_of_steps": null,
+    "error": {
+      "code": "network_error",
+      "message": "[Errno 8] nodename nor servname provided, or not known"
+    }
+  },
+  "result": null,
+  "validation_errors": []
+}

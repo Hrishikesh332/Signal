@@ -1,0 +1,202 @@
+{
+  "snapshot_id": "source-competitor-competitor-3b80447922a7e239-e0e9938b-af3e-4bfe-a0af-5b5d614fd3a1",
+  "captured_at": "2026-03-28T06:49:11.749Z",
+  "capture_status": "COMPLETED",
+  "source_id": "source-competitor-competitor-3b80447922a7e239",
+  "source_name": "Competitor Peer: PayPal Holdings, Inc.",
+  "category": "reputation_intelligence",
+  "company_id": "company-profile-3b80447922a7e239",
+  "company_name": "PayPal Holdings, Inc.",
+  "product_id": null,
+  "product_name": null,
+  "target_url": "https://www.paypal.com",
+  "goal": "Visit the provided public company website for the competitor candidate and extract a structured competitive profile. Identify the company name, homepage URL, a concise company summary, the primary market category, sector, geography, target customers, core products or services, visible differentiators, visible pricing or packaging signals, and supporting evidence URLs. Do not invent claims that are not visible on the site. Return facts that help compare PayPal Holdings, Inc. in a competitor landscape.",
+  "goal_prompt": "Visit the provided public company website for the competitor candidate and extract a structured competitive profile. Identify the company name, homepage URL, a concise company summary, the primary market category, sector, geography, target customers, core products or services, visible differentiators, visible pricing or packaging signals, and supporting evidence URLs. Do not invent claims that are not visible on the site. Return facts that help compare PayPal Holdings, Inc. in a competitor landscape.\n\nReturn only structured JSON that matches this schema exactly:\n{\"type\":\"object\",\"required\":[\"captured_at\",\"company_name\",\"homepage_url\",\"summary\",\"market_category\",\"sector\",\"geography\",\"target_customers\",\"products\",\"differentiators\",\"pricing_signals\",\"evidence_urls\"],\"properties\":{\"captured_at\":{\"type\":\"string\"},\"company_name\":{\"type\":\"string\"},\"homepage_url\":{\"type\":\"string\"},\"summary\":{\"type\":\"string\"},\"market_category\":{\"type\":\"string\"},\"sector\":{\"type\":\"string\"},\"geography\":{\"type\":\"string\"},\"target_customers\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"products\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"required\":[\"name\",\"category\",\"summary\"],\"properties\":{\"name\":{\"type\":\"string\"},\"category\":{\"type\":\"string\"},\"summary\":{\"type\":\"string\"}}}},\"differentiators\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"pricing_signals\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"evidence_urls\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}}}\n\nStop conditions:\n[\"Stop after the homepage and up to two visibly linked product, solutions, or pricing pages have been reviewed.\",\"Stop after eight relevant visible sections have been extracted.\",\"Stop after two consecutive navigation or parsing failures.\"]\n\nStructured error handling rules:\n{\"timeout\":{\"action\":\"retry\",\"max_retries\":2,\"emit_status\":\"failed\"},\"layout_changed\":{\"action\":\"store_raw_payload\",\"emit_status\":\"failed\"},\"schema_validation_failed\":{\"action\":\"store_raw_payload\",\"emit_status\":\"validation_error\"}}",
+  "output_schema": {
+    "type": "object",
+    "required": [
+      "captured_at",
+      "company_name",
+      "homepage_url",
+      "summary",
+      "market_category",
+      "sector",
+      "geography",
+      "target_customers",
+      "products",
+      "differentiators",
+      "pricing_signals",
+      "evidence_urls"
+    ],
+    "properties": {
+      "captured_at": {
+        "type": "string"
+      },
+      "company_name": {
+        "type": "string"
+      },
+      "homepage_url": {
+        "type": "string"
+      },
+      "summary": {
+        "type": "string"
+      },
+      "market_category": {
+        "type": "string"
+      },
+      "sector": {
+        "type": "string"
+      },
+      "geography": {
+        "type": "string"
+      },
+      "target_customers": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "products": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "name",
+            "category",
+            "summary"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "category": {
+              "type": "string"
+            },
+            "summary": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "differentiators": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "pricing_signals": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "evidence_urls": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "stop_conditions": [
+    "Stop after the homepage and up to two visibly linked product, solutions, or pricing pages have been reviewed.",
+    "Stop after eight relevant visible sections have been extracted.",
+    "Stop after two consecutive navigation or parsing failures."
+  ],
+  "error_handling": {
+    "timeout": {
+      "action": "retry",
+      "max_retries": 2,
+      "emit_status": "failed"
+    },
+    "layout_changed": {
+      "action": "store_raw_payload",
+      "emit_status": "failed"
+    },
+    "schema_validation_failed": {
+      "action": "store_raw_payload",
+      "emit_status": "validation_error"
+    }
+  },
+  "run": {
+    "run_id": "e0e9938b-af3e-4bfe-a0af-5b5d614fd3a1",
+    "status": "COMPLETED",
+    "started_at": "2026-03-28T06:46:52.359Z",
+    "finished_at": "2026-03-28T06:49:11.749Z",
+    "num_of_steps": 15,
+    "error": null
+  },
+  "result": {
+    "captured_at": "2026-03-28",
+    "company_name": "PayPal Holdings, Inc.",
+    "homepage_url": "https://www.paypal.com",
+    "summary": "PayPal is a leading global financial technology company and digital commerce platform that has been at the forefront of the digital payment revolution for over 25 years. It connects consumers and merchants across approximately 200 markets, providing secure and innovative solutions for payments, money transfers, and financial management.",
+    "market_category": "Financial Technology (Fintech)",
+    "sector": "Financial Services",
+    "geography": "Global (Operating in approximately 200 markets)",
+    "target_customers": [
+      "Individual consumers",
+      "Small and medium businesses",
+      "Global enterprises and marketplaces",
+      "Venmo users",
+      "International money transfer senders/receivers"
+    ],
+    "products": [
+      {
+        "name": "PayPal App & Digital Wallet",
+        "category": "Consumer Payments",
+        "summary": "A comprehensive digital wallet for online checkout, P2P payments, managing crypto transfers, and accessing rewards."
+      },
+      {
+        "name": "Venmo",
+        "category": "Social Payments",
+        "summary": "A popular social payment app for sending money to friends and family and making purchases at millions of merchants."
+      },
+      {
+        "name": "Braintree",
+        "category": "Merchant Services",
+        "summary": "A global payment platform that enables businesses to accept and process payments via credit cards, wallets, and local payment methods."
+      },
+      {
+        "name": "PayPal USD (PYUSD)",
+        "category": "Digital Currency",
+        "summary": "A stablecoin pegged 1:1 to the U.S. dollar, designed for fast, secure, and low-cost digital transfers and commerce."
+      },
+      {
+        "name": "Buy Now, Pay Later (BNPL)",
+        "category": "Consumer Financing",
+        "summary": "Flexible payment options including 'Pay in 4' and 'Pay Monthly' that allow consumers to spread costs over time."
+      }
+    ],
+    "differentiators": [
+      "Massive global scale with 439 million active consumer and merchant accounts.",
+      "Decades of experience (founded 1998) and trust in digital payment processing.",
+      "Integrated ecosystem of brands including Venmo, Xoom, Braintree, and Zettle.",
+      "AI-driven personalization and fraud detection to enhance user security and experience.",
+      "Commitment to financial inclusion and social impact initiatives."
+    ],
+    "pricing_signals": [
+      "Elimination of late fees for Buy Now, Pay Later products globally to increase transparency.",
+      "Launch of no-fee BNPL offerings in specific regions like Canada (2025 signal).",
+      "Focus on reducing costs for global commerce through crypto and blockchain (PYUSD) initiatives.",
+      "Total payment volume of $1.79 trillion and 25 billion transactions recorded for fiscal year 2025.",
+      "Flexible 'Pay Monthly' financing terms to cater to different consumer budget needs."
+    ],
+    "evidence_urls": [
+      "https://about.pypl.com/who-we-are/history-and-facts/default.aspx",
+      "https://about.pypl.com/about-us/default.aspx",
+      "https://investor.pypl.com/home/default.aspx",
+      "https://about.pypl.com/news-details/2021/PayPal-Announces-No-Late-Fees-for-Buy-Now-Pay-Later-Products-Globally/default.aspx"
+    ]
+  },
+  "validation_errors": [],
+  "content_fingerprint": "a7191015b2b30ef9727c148943e0f51d4ce883c3720d79f536483820b1c09e07",
+  "storage": {
+    "mode": "change_only",
+    "change_state": "new",
+    "snapshot_persisted": true,
+    "canonical_snapshot_id": "source-competitor-competitor-3b80447922a7e239-e0e9938b-af3e-4bfe-a0af-5b5d614fd3a1",
+    "previous_snapshot_id": null,
+    "duplicate_of_snapshot_id": null
+  }
+}

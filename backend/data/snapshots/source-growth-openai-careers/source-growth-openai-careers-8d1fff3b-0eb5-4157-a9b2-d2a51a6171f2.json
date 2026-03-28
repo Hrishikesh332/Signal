@@ -1,0 +1,504 @@
+{
+  "snapshot_id": "source-growth-openai-careers-8d1fff3b-0eb5-4157-a9b2-d2a51a6171f2",
+  "captured_at": "2026-03-27T23:40:43.338Z",
+  "capture_status": "COMPLETED",
+  "source_id": "source-growth-openai-careers",
+  "source_name": "OpenAI Careers Search",
+  "category": "growth_intelligence",
+  "company_id": "company-openai",
+  "company_name": "OpenAI",
+  "product_id": null,
+  "product_name": null,
+  "target_url": "https://openai.com/careers/search/",
+  "goal": "Visit the public OpenAI careers search page and extract current hiring signals. Capture up to 50 visible open roles. For each role, return signal_type as hiring_opening, plus title, team, location, and evidence_url. Set metrics.growth to the total number of roles captured. Include map_points only when the page text provides enough explicit location context to confidently provide latitude and longitude. If location coordinates are not reliable from the page, return an empty map_points array.",
+  "goal_prompt": "Visit the public OpenAI careers search page and extract current hiring signals. Capture up to 50 visible open roles. For each role, return signal_type as hiring_opening, plus title, team, location, and evidence_url. Set metrics.growth to the total number of roles captured. Include map_points only when the page text provides enough explicit location context to confidently provide latitude and longitude. If location coordinates are not reliable from the page, return an empty map_points array.\n\nReturn only structured JSON that matches this schema exactly:\n{\"type\":\"object\",\"required\":[\"captured_at\",\"company\",\"signals\",\"metrics\",\"map_points\"],\"properties\":{\"captured_at\":{\"type\":\"string\"},\"company\":{\"type\":\"string\"},\"signals\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"required\":[\"signal_type\",\"title\",\"team\",\"location\",\"evidence_url\"],\"properties\":{\"signal_type\":{\"type\":\"string\"},\"title\":{\"type\":\"string\"},\"team\":{\"type\":\"string\"},\"location\":{\"type\":\"string\"},\"evidence_url\":{\"type\":\"string\"}}}},\"metrics\":{\"type\":\"object\",\"required\":[\"growth\"],\"properties\":{\"growth\":{\"type\":\"number\"}}},\"map_points\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"required\":[\"latitude\",\"longitude\",\"entity_name\",\"signal_type\",\"severity\",\"timestamp\",\"explanation\"],\"properties\":{\"latitude\":{\"type\":\"number\"},\"longitude\":{\"type\":\"number\"},\"entity_name\":{\"type\":\"string\"},\"signal_type\":{\"type\":\"string\"},\"severity\":{\"type\":\"string\"},\"timestamp\":{\"type\":\"string\"},\"explanation\":{\"type\":\"string\"},\"cluster_key\":{\"type\":\"string\"}}}}}}\n\nStop conditions:\n[\"Stop after up to 50 visible roles are extracted.\",\"Stop when pagination or infinite scroll yields no new roles.\",\"Stop after two consecutive page load failures.\"]\n\nStructured error handling rules:\n{\"timeout\":{\"action\":\"retry\",\"max_retries\":2,\"emit_status\":\"failed\"},\"layout_changed\":{\"action\":\"return_partial_result\",\"emit_status\":\"failed\"},\"schema_validation_failed\":{\"action\":\"store_raw_payload\",\"emit_status\":\"validation_error\"}}",
+  "output_schema": {
+    "type": "object",
+    "required": [
+      "captured_at",
+      "company",
+      "signals",
+      "metrics",
+      "map_points"
+    ],
+    "properties": {
+      "captured_at": {
+        "type": "string"
+      },
+      "company": {
+        "type": "string"
+      },
+      "signals": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "signal_type",
+            "title",
+            "team",
+            "location",
+            "evidence_url"
+          ],
+          "properties": {
+            "signal_type": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "team": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string"
+            },
+            "evidence_url": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "metrics": {
+        "type": "object",
+        "required": [
+          "growth"
+        ],
+        "properties": {
+          "growth": {
+            "type": "number"
+          }
+        }
+      },
+      "map_points": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "latitude",
+            "longitude",
+            "entity_name",
+            "signal_type",
+            "severity",
+            "timestamp",
+            "explanation"
+          ],
+          "properties": {
+            "latitude": {
+              "type": "number"
+            },
+            "longitude": {
+              "type": "number"
+            },
+            "entity_name": {
+              "type": "string"
+            },
+            "signal_type": {
+              "type": "string"
+            },
+            "severity": {
+              "type": "string"
+            },
+            "timestamp": {
+              "type": "string"
+            },
+            "explanation": {
+              "type": "string"
+            },
+            "cluster_key": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  "stop_conditions": [
+    "Stop after up to 50 visible roles are extracted.",
+    "Stop when pagination or infinite scroll yields no new roles.",
+    "Stop after two consecutive page load failures."
+  ],
+  "error_handling": {
+    "timeout": {
+      "action": "retry",
+      "max_retries": 2,
+      "emit_status": "failed"
+    },
+    "layout_changed": {
+      "action": "return_partial_result",
+      "emit_status": "failed"
+    },
+    "schema_validation_failed": {
+      "action": "store_raw_payload",
+      "emit_status": "validation_error"
+    }
+  },
+  "run": {
+    "run_id": "8d1fff3b-0eb5-4157-a9b2-d2a51a6171f2",
+    "status": "COMPLETED",
+    "started_at": "2026-03-27T23:39:02.001Z",
+    "finished_at": "2026-03-27T23:40:43.338Z",
+    "num_of_steps": 3,
+    "error": null
+  },
+  "result": {
+    "captured_at": "2026-03-25T12:00:00Z",
+    "company": "OpenAI",
+    "signals": [
+      {
+        "signal_type": "hiring_opening",
+        "title": "Abuse Investigator",
+        "team": "Intelligence & Investigations",
+        "location": "2 locations",
+        "evidence_url": "https://openai.com/careers/abuse-investigator-san-francisco/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "Abuse Investigator (CBRN)",
+        "team": "Intelligence & Investigations",
+        "location": "3 locations",
+        "evidence_url": "https://openai.com/careers/abuse-investigator-(cbrn)-remote-us/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "Abuse Investigator - Child Safety",
+        "team": "Intelligence & Investigations",
+        "location": "2 locations",
+        "evidence_url": "https://openai.com/careers/abuse-investigator-child-safety-san-francisco/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "Account Director, Digital Native",
+        "team": "Sales",
+        "location": "Seoul, South Korea",
+        "evidence_url": "https://openai.com/careers/account-director-digital-native-seoul-south-korea/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "Account Director, Digital Native Core",
+        "team": "Sales",
+        "location": "4 locations",
+        "evidence_url": "https://openai.com/careers/account-director-digital-native-core-san-francisco/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "Account Director, Digital Native Large Enterprise",
+        "team": "Sales",
+        "location": "4 locations",
+        "evidence_url": "https://openai.com/careers/account-director-digital-native-large-enterprise-san-francisco/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "Account Director, Digital Natives - Land Team",
+        "team": "Sales",
+        "location": "Dublin, Ireland",
+        "evidence_url": "https://openai.com/careers/account-director-digital-natives-land-team-dublin-ireland/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "Account Director, Digital Natives - Land Team",
+        "team": "Sales",
+        "location": "Munich, Germany",
+        "evidence_url": "https://openai.com/careers/account-director-digital-natives-land-team-munich-germany/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "Account Director, Education",
+        "team": "Sales",
+        "location": "Sydney, Australia",
+        "evidence_url": "https://openai.com/careers/account-director-education-sydney-australia/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "Account Director, Education",
+        "team": "Sales",
+        "location": "2 locations",
+        "evidence_url": "https://openai.com/careers/account-director-education-dublin-ireland/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "Account Director, Education",
+        "team": "Go To Market",
+        "location": "3 locations",
+        "evidence_url": "https://openai.com/careers/account-director-education-san-francisco/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "Account Director EDU- Tokyo",
+        "team": "Sales",
+        "location": "Tokyo, Japan",
+        "evidence_url": "https://openai.com/careers/account-director-edu-tokyo-tokyo-japan/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "Account Director, Federal Partnerships",
+        "team": "OpenAI for Gov",
+        "location": "Washington, DC",
+        "evidence_url": "https://openai.com/careers/account-director-federal-partnerships-washington-dc/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "Account Director, Financial Services",
+        "team": "Sales",
+        "location": "New York City",
+        "evidence_url": "https://openai.com/careers/account-director-financial-services-new-york-city/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "Account Director, Government",
+        "team": "Sales",
+        "location": "Singapore",
+        "evidence_url": "https://openai.com/careers/account-director-government-singapore/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "Account Director, Healthcare & Life Sciences",
+        "team": "Sales",
+        "location": "3 locations",
+        "evidence_url": "https://openai.com/careers/account-director-healthcare-and-life-sciences-san-francisco/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "Account Director, Insurance",
+        "team": "Sales",
+        "location": "New York City",
+        "evidence_url": "https://openai.com/careers/account-director-insurance-new-york-city/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "Account Director, Large Enterprise",
+        "team": "Sales",
+        "location": "4 locations",
+        "evidence_url": "https://openai.com/careers/account-director-large-enterprise-san-francisco/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "Account Director, Large Enterprise",
+        "team": "Sales",
+        "location": "Seoul, South Korea",
+        "evidence_url": "https://openai.com/careers/account-director-large-enterprise-seoul-south-korea/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "Account Director, Retail",
+        "team": "Sales",
+        "location": "San Francisco",
+        "evidence_url": "https://openai.com/careers/account-director-retail-san-francisco/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "Account Director, Startups Expansion",
+        "team": "Sales",
+        "location": "San Francisco",
+        "evidence_url": "https://openai.com/careers/account-director-startups-expansion-san-francisco/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "Account Director, State and Local Government",
+        "team": "OpenAI for Gov",
+        "location": "Washington, DC",
+        "evidence_url": "https://openai.com/careers/account-director-state-and-local-government-washington-dc/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "Account Director - Tokyo",
+        "team": "Sales",
+        "location": "Tokyo, Japan",
+        "evidence_url": "https://openai.com/careers/account-director-tokyo-tokyo-japan/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "Accounts Payable Leader",
+        "team": "Finance",
+        "location": "San Francisco",
+        "evidence_url": "https://openai.com/careers/accounts-payable-leader-san-francisco/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "Administrative Business Partner, Business Leadership Support",
+        "team": "Executive Operations",
+        "location": "San Francisco",
+        "evidence_url": "https://openai.com/careers/administrative-business-partner-business-leadership-support-san-francisco/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "Ads Revenue Accounting Lead",
+        "team": "Finance",
+        "location": "San Francisco",
+        "evidence_url": "https://openai.com/careers/ads-revenue-accounting-lead-san-francisco/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "Advanced Packaging Technologist",
+        "team": "Hardware",
+        "location": "San Francisco",
+        "evidence_url": "https://openai.com/careers/advanced-packaging-technologist-san-francisco/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "Advertising Marketing Science Lead",
+        "team": "Marketing",
+        "location": "San Francisco",
+        "evidence_url": "https://openai.com/careers/advertising-marketing-science-lead-san-francisco/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "AI Deployment Engineer",
+        "team": "Technical Success",
+        "location": "London, UK",
+        "evidence_url": "https://openai.com/careers/ai-deployment-engineer-london-uk/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "AI Deployment Engineer",
+        "team": "Technical Success",
+        "location": "Tokyo, Japan",
+        "evidence_url": "https://openai.com/careers/ai-deployment-engineer-tokyo-japan/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "AI Deployment Engineer",
+        "team": "Technical Success",
+        "location": "Delhi, India",
+        "evidence_url": "https://openai.com/careers/ai-deployment-engineer-delhi-india/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "AI Deployment Engineer",
+        "team": "Technical Success",
+        "location": "Seoul, South Korea",
+        "evidence_url": "https://openai.com/careers/ai-deployment-engineer-seoul-south-korea/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "AI Deployment Engineer",
+        "team": "Technical Success",
+        "location": "Munich, Germany",
+        "evidence_url": "https://openai.com/careers/ai-deployment-engineer-munich-germany/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "AI Deployment Engineer- ChatGPT Ecosystem",
+        "team": "Technical Success",
+        "location": "2 locations",
+        "evidence_url": "https://openai.com/careers/ai-deployment-engineer-chatgpt-ecosystem-san-francisco/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "AI Deployment Engineer- ChatGPT Ecosystem",
+        "team": "Technical Success",
+        "location": "2 locations",
+        "evidence_url": "https://openai.com/careers/ai-deployment-engineer-chatgpt-ecosystem-remote-us/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "AI Deployment Engineer | Codex",
+        "team": "Technical Success",
+        "location": "Munich, Germany",
+        "evidence_url": "https://openai.com/careers/ai-deployment-engineer-or-codex-munich-germany/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "AI Deployment Engineer- Codex",
+        "team": "Technical Success",
+        "location": "Remote - US",
+        "evidence_url": "https://openai.com/careers/ai-deployment-engineer-codex-remote-us/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "AI Deployment Engineer- Codex",
+        "team": "Technical Success",
+        "location": "San Francisco",
+        "evidence_url": "https://openai.com/careers/ai-deployment-engineer-codex-san-francisco/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "AI Deployment Engineer, Codex | Tokyo",
+        "team": "Technical Success",
+        "location": "Tokyo, Japan",
+        "evidence_url": "https://openai.com/careers/ai-deployment-engineer-codex-or-tokyo-tokyo-japan/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "AI Deployment Engineer, Gov",
+        "team": "OpenAI for Gov",
+        "location": "Washington, DC",
+        "evidence_url": "https://openai.com/careers/ai-deployment-engineer-gov-washington-dc/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "AI Deployment Engineer- Media Partnerships",
+        "team": "Technical Success",
+        "location": "New York City",
+        "evidence_url": "https://openai.com/careers/ai-deployment-engineer-media-partnerships-new-york-city/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "AI Deployment Engineer- Startups",
+        "team": "Technical Success",
+        "location": "San Francisco",
+        "evidence_url": "https://openai.com/careers/ai-deployment-engineer-startups-san-francisco/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "AI Deployment Engineer- Startups",
+        "team": "Technical Success",
+        "location": "New York City",
+        "evidence_url": "https://openai.com/careers/ai-deployment-engineer-startups-new-york-city/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "AI Deployment Engineer, Startups",
+        "team": "Technical Success",
+        "location": "India - Remote",
+        "evidence_url": "https://openai.com/careers/ai-deployment-engineer-startups-india-remote/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "AI Deployment Engineer, Startups",
+        "team": "Technical Success",
+        "location": "Singapore",
+        "evidence_url": "https://openai.com/careers/ai-deployment-engineer-startups-singapore/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "AI Deployment Manager",
+        "team": "Technical Success",
+        "location": "Munich, Germany",
+        "evidence_url": "https://openai.com/careers/ai-deployment-manager-munich-germany/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "AI Deployment Manager - Core Ecosystem, EDU",
+        "team": "Technical Success",
+        "location": "2 locations",
+        "evidence_url": "https://openai.com/careers/ai-deployment-manager-core-ecosystem-edu-san-francisco/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "AI Deployment Manager - NYC",
+        "team": "Technical Success",
+        "location": "New York City",
+        "evidence_url": "https://openai.com/careers/ai-deployment-manager-nyc-new-york-city/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "AI Deployment Manager - Pilots - NYC",
+        "team": "Technical Success",
+        "location": "New York City",
+        "evidence_url": "https://openai.com/careers/ai-deployment-manager-pilots-nyc-new-york-city/"
+      },
+      {
+        "signal_type": "hiring_opening",
+        "title": "AI Deployment Manager - Pilots - San Francisco",
+        "team": "Technical Success",
+        "location": "San Francisco",
+        "evidence_url": "https://openai.com/careers/ai-deployment-manager-pilots-san-francisco-san-francisco/"
+      }
+    ],
+    "metrics": {
+      "growth": 50
+    },
+    "map_points": []
+  },
+  "validation_errors": []
+}

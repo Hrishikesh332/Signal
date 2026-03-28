@@ -1,0 +1,208 @@
+{
+  "snapshot_id": "source-competitor-competitor-8476dfbea1c78ff2-450beab5-939f-4071-a475-0b6360798ab3",
+  "captured_at": "2026-03-28T06:51:42.402Z",
+  "capture_status": "COMPLETED",
+  "source_id": "source-competitor-competitor-8476dfbea1c78ff2",
+  "source_name": "Competitor Peer: Square, Inc.",
+  "category": "reputation_intelligence",
+  "company_id": "company-profile-8476dfbea1c78ff2",
+  "company_name": "Square, Inc.",
+  "product_id": null,
+  "product_name": null,
+  "target_url": "https://squareup.com",
+  "goal": "Visit the provided public company website for the competitor candidate and extract a structured competitive profile. Identify the company name, homepage URL, a concise company summary, the primary market category, sector, geography, target customers, core products or services, visible differentiators, visible pricing or packaging signals, and supporting evidence URLs. Do not invent claims that are not visible on the site. Return facts that help compare Square, Inc. in a competitor landscape.",
+  "goal_prompt": "Visit the provided public company website for the competitor candidate and extract a structured competitive profile. Identify the company name, homepage URL, a concise company summary, the primary market category, sector, geography, target customers, core products or services, visible differentiators, visible pricing or packaging signals, and supporting evidence URLs. Do not invent claims that are not visible on the site. Return facts that help compare Square, Inc. in a competitor landscape.\n\nReturn only structured JSON that matches this schema exactly:\n{\"type\":\"object\",\"required\":[\"captured_at\",\"company_name\",\"homepage_url\",\"summary\",\"market_category\",\"sector\",\"geography\",\"target_customers\",\"products\",\"differentiators\",\"pricing_signals\",\"evidence_urls\"],\"properties\":{\"captured_at\":{\"type\":\"string\"},\"company_name\":{\"type\":\"string\"},\"homepage_url\":{\"type\":\"string\"},\"summary\":{\"type\":\"string\"},\"market_category\":{\"type\":\"string\"},\"sector\":{\"type\":\"string\"},\"geography\":{\"type\":\"string\"},\"target_customers\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"products\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"required\":[\"name\",\"category\",\"summary\"],\"properties\":{\"name\":{\"type\":\"string\"},\"category\":{\"type\":\"string\"},\"summary\":{\"type\":\"string\"}}}},\"differentiators\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"pricing_signals\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"evidence_urls\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}}}\n\nStop conditions:\n[\"Stop after the homepage and up to two visibly linked product, solutions, or pricing pages have been reviewed.\",\"Stop after eight relevant visible sections have been extracted.\",\"Stop after two consecutive navigation or parsing failures.\"]\n\nStructured error handling rules:\n{\"timeout\":{\"action\":\"retry\",\"max_retries\":2,\"emit_status\":\"failed\"},\"layout_changed\":{\"action\":\"store_raw_payload\",\"emit_status\":\"failed\"},\"schema_validation_failed\":{\"action\":\"store_raw_payload\",\"emit_status\":\"validation_error\"}}",
+  "output_schema": {
+    "type": "object",
+    "required": [
+      "captured_at",
+      "company_name",
+      "homepage_url",
+      "summary",
+      "market_category",
+      "sector",
+      "geography",
+      "target_customers",
+      "products",
+      "differentiators",
+      "pricing_signals",
+      "evidence_urls"
+    ],
+    "properties": {
+      "captured_at": {
+        "type": "string"
+      },
+      "company_name": {
+        "type": "string"
+      },
+      "homepage_url": {
+        "type": "string"
+      },
+      "summary": {
+        "type": "string"
+      },
+      "market_category": {
+        "type": "string"
+      },
+      "sector": {
+        "type": "string"
+      },
+      "geography": {
+        "type": "string"
+      },
+      "target_customers": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "products": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "name",
+            "category",
+            "summary"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "category": {
+              "type": "string"
+            },
+            "summary": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "differentiators": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "pricing_signals": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "evidence_urls": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "stop_conditions": [
+    "Stop after the homepage and up to two visibly linked product, solutions, or pricing pages have been reviewed.",
+    "Stop after eight relevant visible sections have been extracted.",
+    "Stop after two consecutive navigation or parsing failures."
+  ],
+  "error_handling": {
+    "timeout": {
+      "action": "retry",
+      "max_retries": 2,
+      "emit_status": "failed"
+    },
+    "layout_changed": {
+      "action": "store_raw_payload",
+      "emit_status": "failed"
+    },
+    "schema_validation_failed": {
+      "action": "store_raw_payload",
+      "emit_status": "validation_error"
+    }
+  },
+  "run": {
+    "run_id": "450beab5-939f-4071-a475-0b6360798ab3",
+    "status": "COMPLETED",
+    "started_at": "2026-03-28T06:49:37.340Z",
+    "finished_at": "2026-03-28T06:51:42.402Z",
+    "num_of_steps": 7,
+    "error": null
+  },
+  "result": {
+    "captured_at": "2026-03-28",
+    "company_name": "Square",
+    "homepage_url": "https://squareup.com",
+    "summary": "Square provides an integrated ecosystem of commerce solutions including software, hardware, and financial services. Its platform is designed to help businesses of all sizes manage payments, sales, staffing, and banking within a single unified system.",
+    "market_category": "Financial Technology (Fintech) & Business Software",
+    "sector": "Financial Services / Software",
+    "geography": "Global (United States, United Kingdom, Australia, Canada, Japan, Ireland, Spain, France)",
+    "target_customers": [
+      "Restaurants",
+      "Retail",
+      "Beauty & Personal Care",
+      "Professional Services",
+      "Home & Commercial Services",
+      "Healthcare",
+      "Fitness",
+      "Franchises",
+      "Nonprofits"
+    ],
+    "products": [
+      {
+        "name": "Square Point of Sale",
+        "category": "Point of Sale",
+        "summary": "A comprehensive POS application that handles payments, digital receipts, inventory, and analytics across various industries."
+      },
+      {
+        "name": "Square Hardware",
+        "category": "Hardware",
+        "summary": "A suite of payment processing devices including Square Register, Terminal, Stand, and contactless/chip readers."
+      },
+      {
+        "name": "Square Banking",
+        "category": "Financial Services",
+        "summary": "Business financial tools including Checking, Savings, and Square Loans, integrated directly with sales data."
+      },
+      {
+        "name": "Square Online",
+        "category": "E-commerce",
+        "summary": "A website builder that allows businesses to create online stores with automatic sync of items and inventory with their physical POS."
+      },
+      {
+        "name": "Square Payroll",
+        "category": "Human Resources",
+        "summary": "Full-service payroll software that manages employee payments, tax filings, and benefits integration."
+      }
+    ],
+    "differentiators": [
+      "Unified ecosystem combining hardware, software, and banking services",
+      "No hidden fees or long-term locked-in contracts",
+      "Industry-specific specialized POS software (Square for Retail, Square for Restaurants)",
+      "Instant access to funds through Square Checking",
+      "Highly intuitive user interface designed for fast setup and ease of use",
+      "Square AI-powered tools for business automation and insights"
+    ],
+    "pricing_signals": [
+      "Square Free: $0/month per location with 2.6% + 15\u00a2 in-person processing fee",
+      "Square Plus: $49/month per location with 2.5% + 15\u00a2 in-person processing fee",
+      "Square Premium: $149/month per location with 2.4% + 15\u00a2 in-person processing fee",
+      "Square Pro: Custom pricing for businesses processing over $250k/year",
+      "Online transactions: 2.9% + 30\u00a2 (Plus/Premium) or 3.3% + 30\u00a2 (Free)",
+      "Hardware pricing starts at $59 for Square Reader for contactless and chip",
+      "Square Payroll: $35/month base fee + $6/month per person"
+    ],
+    "evidence_urls": [
+      "https://squareup.com/",
+      "https://squareup.com/us/en/pricing",
+      "https://squareup.com/us/en/why-square"
+    ]
+  },
+  "validation_errors": [],
+  "content_fingerprint": "0e6c4486e535d7a2fb63d56262b7cd94fe58f009480bb078c4d92b8960c55b97",
+  "storage": {
+    "mode": "change_only",
+    "change_state": "new",
+    "snapshot_persisted": true,
+    "canonical_snapshot_id": "source-competitor-competitor-8476dfbea1c78ff2-450beab5-939f-4071-a475-0b6360798ab3",
+    "previous_snapshot_id": null,
+    "duplicate_of_snapshot_id": null
+  }
+}
