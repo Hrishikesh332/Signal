@@ -145,6 +145,17 @@ function formatRelativeTime(value?: string | null) {
   return formatter.format(diffDays, "day")
 }
 
+function buildTimestampLabel(value: string | null | undefined, isHydrated: boolean) {
+  if (!value) return "No timestamp"
+  return isHydrated ? formatTimestamp(value) : value
+}
+
+function buildRelativeTimeLabel(item: WireItem, isHydrated: boolean) {
+  if (item.relative_time_label) return item.relative_time_label
+  if (!item.timestamp) return "No timestamp"
+  return isHydrated ? formatRelativeTime(item.timestamp) : item.timestamp
+}
+
 function titleCase(value: string) {
   return value
     .split("_")
@@ -175,6 +186,11 @@ export function WireView() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isHydrated, setIsHydrated] = useState(false)
+
+  useEffect(() => {
+    setIsHydrated(true)
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -331,7 +347,7 @@ export function WireView() {
                           </div>
                           <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-[#83978f]">
                             <Clock3 className="h-3.5 w-3.5" />
-                            {item.relative_time_label || formatRelativeTime(item.timestamp)}
+                            {buildRelativeTimeLabel(item, isHydrated)}
                           </div>
                         </div>
 
@@ -368,7 +384,7 @@ export function WireView() {
                       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/8 pt-4 text-[11px] text-[#8ea29a]">
                         <div className="flex flex-wrap items-center gap-4">
                           <span>Seen {item.history_count || 1} time{(item.history_count || 1) === 1 ? "" : "s"}</span>
-                          <span>First seen {formatTimestamp(item.first_seen_at || item.timestamp)}</span>
+                          <span>First seen {buildTimestampLabel(item.first_seen_at || item.timestamp, isHydrated)}</span>
                         </div>
                         {evidenceUrl ? (
                           <a
@@ -418,11 +434,15 @@ export function WireView() {
                       </div>
                       <div className="rounded-2xl border border-white/8 bg-[#0d1110] px-3 py-3">
                         <div className="text-[10px] uppercase tracking-[0.18em] text-[#7f948c]">First Seen</div>
-                        <div className="mt-1 text-[#eef5f1]">{formatTimestamp(selectedSignal.first_seen_at || selectedSignal.timestamp)}</div>
+                        <div className="mt-1 text-[#eef5f1]">
+                          {buildTimestampLabel(selectedSignal.first_seen_at || selectedSignal.timestamp, isHydrated)}
+                        </div>
                       </div>
                       <div className="rounded-2xl border border-white/8 bg-[#0d1110] px-3 py-3">
                         <div className="text-[10px] uppercase tracking-[0.18em] text-[#7f948c]">Previous Seen</div>
-                        <div className="mt-1 text-[#eef5f1]">{formatTimestamp(selectedSignal.previous_seen_at)}</div>
+                        <div className="mt-1 text-[#eef5f1]">
+                          {buildTimestampLabel(selectedSignal.previous_seen_at, isHydrated)}
+                        </div>
                       </div>
                     </div>
 
