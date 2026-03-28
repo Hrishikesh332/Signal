@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 from market_monitor_api.config import Settings
+from market_monitor_api.services.api_contract import build_contract_payload
 from market_monitor_api.services.growth_intelligence import GrowthConfigError, collect_growth_dataset
 from market_monitor_api.services.openai_service import (
     build_alert_entities,
@@ -53,6 +54,7 @@ def build_dashboard_response(settings: Settings, refresh: bool = False) -> dict:
     trend_series = build_trend_series(snapshots)
     growth_intelligence = build_growth_dashboard_section(settings)
     return {
+        "contract": build_contract_payload("dashboard", view="overview"),
         "meta": build_meta(settings, sources, snapshots, refresh),
         "kpis": build_kpis(events, alerts, source_health, snapshots),
         "events": events,
@@ -76,6 +78,7 @@ def build_meta(settings: Settings, sources: list[dict], snapshots: list[dict], r
     latest_snapshot_at = snapshots[-1]["captured_at"] if snapshots else None
     return {
         "api_version": "v1",
+        "contract_version": build_contract_payload("dashboard")["contract_version"],
         "platform": settings.app_name,
         "generated_at": to_iso_timestamp(datetime.now(timezone.utc)),
         "refresh_requested": refresh,

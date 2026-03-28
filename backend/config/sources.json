@@ -1,17 +1,16 @@
 {
   "sources": [
     {
-      "id": "source-growth-openai-careers",
-      "name": "OpenAI Careers Search",
-      "category": "growth_intelligence",
-      "source_type": "career_page",
-      "company_id": "company-openai",
-      "company_name": "OpenAI",
-      "target_url": "https://openai.com/careers/search/",
-      "goal": "Visit the public OpenAI careers search page and extract current job postings. Return structured growth data with all visible jobs, including role, team, location, timestamp, and evidence URL. Also return metrics with growth equal to the total visible job count and return any confident map points only when the page itself gives explicit location evidence.",
+      "id": "source-market-techcrunch-ai",
+      "name": "TechCrunch AI",
+      "category": "reputation_intelligence",
+      "company_id": "market-tech",
+      "company_name": "Tech Market",
+      "target_url": "https://techcrunch.com/tag/ai/",
+      "goal": "Visit the public TechCrunch AI tag page and extract up to 5 latest visible tech market articles. Return only tech market signals. For each article, extract title, summary, published timestamp, article URL, signal type, market category, severity, mentioned companies when explicit, and explicit regions when explicit. Do not invent companies or regions.",
       "browser_profile": "lite",
       "schedule": {
-        "interval_minutes": 360
+        "interval_minutes": 60
       },
       "proxy_config": {
         "enabled": true,
@@ -19,15 +18,13 @@
       },
       "use_vault": false,
       "credential_item_ids": [],
+      "sector": "tech",
+      "geography": "global",
       "output_schema": {
         "type": "object",
         "required": [
           "captured_at",
-          "company",
-          "jobs",
-          "product_announcements",
-          "funding_mentions",
-          "expansion_indicators",
+          "articles",
           "metrics",
           "map_points"
         ],
@@ -35,108 +32,52 @@
           "captured_at": {
             "type": "string"
           },
-          "company": {
-            "type": "string"
-          },
-          "jobs": {
+          "articles": {
             "type": "array",
             "items": {
               "type": "object",
               "required": [
                 "title",
-                "team",
-                "location",
-                "timestamp",
-                "evidence_url"
-              ],
-              "properties": {
-                "title": {
-                  "type": "string"
-                },
-                "team": {
-                  "type": "string"
-                },
-                "location": {
-                  "type": "string"
-                },
-                "timestamp": {
-                  "type": "string"
-                },
-                "evidence_url": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "product_announcements": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "required": [
-                "title",
+                "summary",
                 "published_at",
-                "evidence_url"
+                "article_url",
+                "signal_type",
+                "market_category",
+                "severity"
               ],
               "properties": {
                 "title": {
-                  "type": "string"
-                },
-                "published_at": {
-                  "type": "string"
-                },
-                "evidence_url": {
                   "type": "string"
                 },
                 "summary": {
                   "type": "string"
-                }
-              }
-            }
-          },
-          "funding_mentions": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "required": [
-                "title",
-                "published_at",
-                "evidence_url"
-              ],
-              "properties": {
-                "title": {
-                  "type": "string"
                 },
                 "published_at": {
                   "type": "string"
                 },
-                "evidence_url": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "expansion_indicators": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "required": [
-                "title",
-                "location",
-                "published_at",
-                "evidence_url"
-              ],
-              "properties": {
-                "title": {
+                "article_url": {
                   "type": "string"
                 },
-                "location": {
+                "signal_type": {
                   "type": "string"
                 },
-                "published_at": {
+                "market_category": {
                   "type": "string"
                 },
-                "evidence_url": {
+                "severity": {
                   "type": "string"
+                },
+                "companies": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "regions": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
                 }
               }
             }
@@ -144,10 +85,10 @@
           "metrics": {
             "type": "object",
             "required": [
-              "growth"
+              "story_count"
             ],
             "properties": {
-              "growth": {
+              "story_count": {
                 "type": "number"
               }
             }
@@ -196,9 +137,9 @@
         }
       },
       "stop_conditions": [
-        "Stop after up to 50 visible roles are extracted.",
-        "Stop when pagination or infinite scroll yields no new roles.",
-        "Stop after two consecutive page load failures."
+        "Stop after 5 visible articles are extracted.",
+        "Stop when the first page has been fully parsed and no new article cards remain.",
+        "Stop after two consecutive page parsing failures."
       ],
       "error_handling": {
         "timeout": {
@@ -207,7 +148,7 @@
           "emit_status": "failed"
         },
         "layout_changed": {
-          "action": "return_partial_result",
+          "action": "store_raw_payload",
           "emit_status": "failed"
         },
         "schema_validation_failed": {
@@ -217,17 +158,16 @@
       }
     },
     {
-      "id": "source-growth-openai-news",
-      "name": "OpenAI Newsroom",
-      "category": "growth_intelligence",
-      "source_type": "press_release",
-      "company_id": "company-openai",
-      "company_name": "OpenAI",
-      "target_url": "https://openai.com/news/",
-      "goal": "Visit the public OpenAI news index and extract structured growth signals from recent items. Capture product announcements, funding mentions, and geographic expansion indicators from the visible news items and linked summaries when available. Return jobs as an empty array unless the news item itself explicitly mentions hiring. Return metrics with growth equal to the combined count of product announcements, funding mentions, and expansion indicators.",
+      "id": "source-market-hacker-news",
+      "name": "Hacker News Front Page",
+      "category": "reputation_intelligence",
+      "company_id": "market-tech",
+      "company_name": "Tech Market",
+      "target_url": "https://news.ycombinator.com/",
+      "goal": "Visit the public Hacker News front page and extract up to 5 latest visible tech market stories. Return only tech market signals. For each story, extract title, summary or a concise factual description from visible text, published timestamp when explicit or the page capture time when not explicit, article URL, signal type, market category, severity, mentioned companies when explicit, and explicit regions when explicit. Do not invent companies or regions.",
       "browser_profile": "lite",
       "schedule": {
-        "interval_minutes": 720
+        "interval_minutes": 60
       },
       "proxy_config": {
         "enabled": true,
@@ -235,15 +175,13 @@
       },
       "use_vault": false,
       "credential_item_ids": [],
+      "sector": "tech",
+      "geography": "global",
       "output_schema": {
         "type": "object",
         "required": [
           "captured_at",
-          "company",
-          "jobs",
-          "product_announcements",
-          "funding_mentions",
-          "expansion_indicators",
+          "articles",
           "metrics",
           "map_points"
         ],
@@ -251,83 +189,20 @@
           "captured_at": {
             "type": "string"
           },
-          "company": {
-            "type": "string"
-          },
-          "jobs": {
+          "articles": {
             "type": "array",
             "items": {
               "type": "object",
               "required": [
                 "title",
-                "team",
-                "location",
-                "timestamp",
-                "evidence_url"
-              ],
-              "properties": {
-                "title": {
-                  "type": "string"
-                },
-                "team": {
-                  "type": "string"
-                },
-                "location": {
-                  "type": "string"
-                },
-                "timestamp": {
-                  "type": "string"
-                },
-                "evidence_url": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "product_announcements": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "required": [
-                "title",
+                "summary",
                 "published_at",
-                "evidence_url"
+                "article_url",
+                "signal_type",
+                "market_category",
+                "severity"
               ],
               "properties": {
-                "signal_type": {
-                  "type": "string"
-                },
-                "title": {
-                  "type": "string"
-                },
-                "product_name": {
-                  "type": "string"
-                },
-                "summary": {
-                  "type": "string"
-                },
-                "published_at": {
-                  "type": "string"
-                },
-                "evidence_url": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "funding_mentions": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "required": [
-                "title",
-                "published_at",
-                "evidence_url"
-              ],
-              "properties": {
-                "signal_type": {
-                  "type": "string"
-                },
                 "title": {
                   "type": "string"
                 },
@@ -337,40 +212,29 @@
                 "published_at": {
                   "type": "string"
                 },
-                "evidence_url": {
+                "article_url": {
                   "type": "string"
-                }
-              }
-            }
-          },
-          "expansion_indicators": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "required": [
-                "title",
-                "location",
-                "published_at",
-                "evidence_url"
-              ],
-              "properties": {
+                },
                 "signal_type": {
                   "type": "string"
                 },
-                "title": {
+                "market_category": {
                   "type": "string"
                 },
-                "location": {
+                "severity": {
                   "type": "string"
                 },
-                "summary": {
-                  "type": "string"
+                "companies": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
                 },
-                "published_at": {
-                  "type": "string"
-                },
-                "evidence_url": {
-                  "type": "string"
+                "regions": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
                 }
               }
             }
@@ -378,10 +242,10 @@
           "metrics": {
             "type": "object",
             "required": [
-              "growth"
+              "story_count"
             ],
             "properties": {
-              "growth": {
+              "story_count": {
                 "type": "number"
               }
             }
@@ -430,9 +294,9 @@
         }
       },
       "stop_conditions": [
-        "Stop after the newest 30 visible news items are processed.",
-        "Stop when no new items appear after one pagination cycle.",
-        "Stop after two consecutive article extraction failures."
+        "Stop after 5 visible stories are extracted.",
+        "Stop when the first page has been fully parsed and no new story rows remain.",
+        "Stop after two consecutive page parsing failures."
       ],
       "error_handling": {
         "timeout": {
@@ -441,7 +305,949 @@
           "emit_status": "failed"
         },
         "layout_changed": {
-          "action": "return_partial_result",
+          "action": "store_raw_payload",
+          "emit_status": "failed"
+        },
+        "schema_validation_failed": {
+          "action": "store_raw_payload",
+          "emit_status": "validation_error"
+        }
+      }
+    },
+    {
+      "id": "source-market-venturebeat-ai",
+      "name": "VentureBeat AI",
+      "category": "reputation_intelligence",
+      "company_id": "market-tech",
+      "company_name": "Tech Market",
+      "target_url": "https://venturebeat.com/ai/",
+      "goal": "Visit the public VentureBeat AI page and extract up to 5 latest visible tech market articles. Return only tech market signals. For each article, extract title, summary, published timestamp, article URL, signal type, market category, severity, mentioned companies when explicit, and explicit regions when explicit. Do not invent companies or regions.",
+      "browser_profile": "lite",
+      "schedule": {
+        "interval_minutes": 60
+      },
+      "proxy_config": {
+        "enabled": true,
+        "country_code": "US"
+      },
+      "use_vault": false,
+      "credential_item_ids": [],
+      "sector": "tech",
+      "geography": "global",
+      "output_schema": {
+        "type": "object",
+        "required": [
+          "captured_at",
+          "articles",
+          "metrics",
+          "map_points"
+        ],
+        "properties": {
+          "captured_at": {
+            "type": "string"
+          },
+          "articles": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "title",
+                "summary",
+                "published_at",
+                "article_url",
+                "signal_type",
+                "market_category",
+                "severity"
+              ],
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "summary": {
+                  "type": "string"
+                },
+                "published_at": {
+                  "type": "string"
+                },
+                "article_url": {
+                  "type": "string"
+                },
+                "signal_type": {
+                  "type": "string"
+                },
+                "market_category": {
+                  "type": "string"
+                },
+                "severity": {
+                  "type": "string"
+                },
+                "companies": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "regions": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "metrics": {
+            "type": "object",
+            "required": [
+              "story_count"
+            ],
+            "properties": {
+              "story_count": {
+                "type": "number"
+              }
+            }
+          },
+          "map_points": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "latitude",
+                "longitude",
+                "entity_name",
+                "signal_type",
+                "severity",
+                "timestamp",
+                "explanation"
+              ],
+              "properties": {
+                "latitude": {
+                  "type": "number"
+                },
+                "longitude": {
+                  "type": "number"
+                },
+                "entity_name": {
+                  "type": "string"
+                },
+                "signal_type": {
+                  "type": "string"
+                },
+                "severity": {
+                  "type": "string"
+                },
+                "timestamp": {
+                  "type": "string"
+                },
+                "explanation": {
+                  "type": "string"
+                },
+                "cluster_key": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "stop_conditions": [
+        "Stop after 5 visible articles are extracted.",
+        "Stop when the first page has been fully parsed and no new article cards remain.",
+        "Stop after two consecutive page parsing failures."
+      ],
+      "error_handling": {
+        "timeout": {
+          "action": "retry",
+          "max_retries": 2,
+          "emit_status": "failed"
+        },
+        "layout_changed": {
+          "action": "store_raw_payload",
+          "emit_status": "failed"
+        },
+        "schema_validation_failed": {
+          "action": "store_raw_payload",
+          "emit_status": "validation_error"
+        }
+      }
+    },
+    {
+      "id": "source-market-reuters-tech",
+      "name": "Reuters Tech",
+      "category": "reputation_intelligence",
+      "company_id": "market-tech",
+      "company_name": "Tech Market",
+      "target_url": "https://www.reuters.com/business/technology/",
+      "goal": "Visit the public Reuters Technology page and extract up to 5 latest visible tech market articles. Return only tech market signals. For each article, extract title, summary, published timestamp, article URL, signal type, market category, severity, mentioned companies when explicit, and explicit regions when explicit. Do not invent companies or regions.",
+      "browser_profile": "lite",
+      "schedule": {
+        "interval_minutes": 60
+      },
+      "proxy_config": {
+        "enabled": true,
+        "country_code": "US"
+      },
+      "use_vault": false,
+      "credential_item_ids": [],
+      "sector": "tech",
+      "geography": "global",
+      "output_schema": {
+        "type": "object",
+        "required": [
+          "captured_at",
+          "articles",
+          "metrics",
+          "map_points"
+        ],
+        "properties": {
+          "captured_at": {
+            "type": "string"
+          },
+          "articles": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "title",
+                "summary",
+                "published_at",
+                "article_url",
+                "signal_type",
+                "market_category",
+                "severity"
+              ],
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "summary": {
+                  "type": "string"
+                },
+                "published_at": {
+                  "type": "string"
+                },
+                "article_url": {
+                  "type": "string"
+                },
+                "signal_type": {
+                  "type": "string"
+                },
+                "market_category": {
+                  "type": "string"
+                },
+                "severity": {
+                  "type": "string"
+                },
+                "companies": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "regions": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "metrics": {
+            "type": "object",
+            "required": [
+              "story_count"
+            ],
+            "properties": {
+              "story_count": {
+                "type": "number"
+              }
+            }
+          },
+          "map_points": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "latitude",
+                "longitude",
+                "entity_name",
+                "signal_type",
+                "severity",
+                "timestamp",
+                "explanation"
+              ],
+              "properties": {
+                "latitude": {
+                  "type": "number"
+                },
+                "longitude": {
+                  "type": "number"
+                },
+                "entity_name": {
+                  "type": "string"
+                },
+                "signal_type": {
+                  "type": "string"
+                },
+                "severity": {
+                  "type": "string"
+                },
+                "timestamp": {
+                  "type": "string"
+                },
+                "explanation": {
+                  "type": "string"
+                },
+                "cluster_key": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "stop_conditions": [
+        "Stop after 5 visible articles are extracted.",
+        "Stop when the first page has been fully parsed and no new article cards remain.",
+        "Stop after two consecutive page parsing failures."
+      ],
+      "error_handling": {
+        "timeout": {
+          "action": "retry",
+          "max_retries": 2,
+          "emit_status": "failed"
+        },
+        "layout_changed": {
+          "action": "store_raw_payload",
+          "emit_status": "failed"
+        },
+        "schema_validation_failed": {
+          "action": "store_raw_payload",
+          "emit_status": "validation_error"
+        }
+      }
+    },
+    {
+      "id": "source-market-techcrunch-fintech",
+      "name": "TechCrunch Fintech",
+      "category": "reputation_intelligence",
+      "company_id": "market-finance",
+      "company_name": "Finance Market",
+      "target_url": "https://techcrunch.com/tag/fintech/",
+      "goal": "Visit the public TechCrunch Fintech tag page and extract up to 5 latest visible finance market articles. Return only finance market signals. For each article, extract title, summary, published timestamp, article URL, signal type, market category, severity, mentioned companies when explicit, and explicit regions when explicit. Do not invent companies or regions.",
+      "browser_profile": "lite",
+      "schedule": {
+        "interval_minutes": 60
+      },
+      "proxy_config": {
+        "enabled": true,
+        "country_code": "US"
+      },
+      "use_vault": false,
+      "credential_item_ids": [],
+      "sector": "finance",
+      "geography": "global",
+      "output_schema": {
+        "type": "object",
+        "required": [
+          "captured_at",
+          "articles",
+          "metrics",
+          "map_points"
+        ],
+        "properties": {
+          "captured_at": {
+            "type": "string"
+          },
+          "articles": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "title",
+                "summary",
+                "published_at",
+                "article_url",
+                "signal_type",
+                "market_category",
+                "severity"
+              ],
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "summary": {
+                  "type": "string"
+                },
+                "published_at": {
+                  "type": "string"
+                },
+                "article_url": {
+                  "type": "string"
+                },
+                "signal_type": {
+                  "type": "string"
+                },
+                "market_category": {
+                  "type": "string"
+                },
+                "severity": {
+                  "type": "string"
+                },
+                "companies": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "regions": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "metrics": {
+            "type": "object",
+            "required": [
+              "story_count"
+            ],
+            "properties": {
+              "story_count": {
+                "type": "number"
+              }
+            }
+          },
+          "map_points": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "latitude",
+                "longitude",
+                "entity_name",
+                "signal_type",
+                "severity",
+                "timestamp",
+                "explanation"
+              ],
+              "properties": {
+                "latitude": {
+                  "type": "number"
+                },
+                "longitude": {
+                  "type": "number"
+                },
+                "entity_name": {
+                  "type": "string"
+                },
+                "signal_type": {
+                  "type": "string"
+                },
+                "severity": {
+                  "type": "string"
+                },
+                "timestamp": {
+                  "type": "string"
+                },
+                "explanation": {
+                  "type": "string"
+                },
+                "cluster_key": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "stop_conditions": [
+        "Stop after 5 visible articles are extracted.",
+        "Stop when the first page has been fully parsed and no new article cards remain.",
+        "Stop after two consecutive page parsing failures."
+      ],
+      "error_handling": {
+        "timeout": {
+          "action": "retry",
+          "max_retries": 2,
+          "emit_status": "failed"
+        },
+        "layout_changed": {
+          "action": "store_raw_payload",
+          "emit_status": "failed"
+        },
+        "schema_validation_failed": {
+          "action": "store_raw_payload",
+          "emit_status": "validation_error"
+        }
+      }
+    },
+    {
+      "id": "source-market-finextra-news",
+      "name": "Finextra News",
+      "category": "reputation_intelligence",
+      "company_id": "market-finance",
+      "company_name": "Finance Market",
+      "target_url": "https://www.finextra.com/news/",
+      "goal": "Visit the public Finextra news page and extract up to 5 latest visible finance market articles. Return only finance market signals. For each article, extract title, summary, published timestamp, article URL, signal type, market category, severity, mentioned companies when explicit, and explicit regions when explicit. Do not invent companies or regions.",
+      "browser_profile": "lite",
+      "schedule": {
+        "interval_minutes": 60
+      },
+      "proxy_config": {
+        "enabled": true,
+        "country_code": "US"
+      },
+      "use_vault": false,
+      "credential_item_ids": [],
+      "sector": "finance",
+      "geography": "global",
+      "output_schema": {
+        "type": "object",
+        "required": [
+          "captured_at",
+          "articles",
+          "metrics",
+          "map_points"
+        ],
+        "properties": {
+          "captured_at": {
+            "type": "string"
+          },
+          "articles": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "title",
+                "summary",
+                "published_at",
+                "article_url",
+                "signal_type",
+                "market_category",
+                "severity"
+              ],
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "summary": {
+                  "type": "string"
+                },
+                "published_at": {
+                  "type": "string"
+                },
+                "article_url": {
+                  "type": "string"
+                },
+                "signal_type": {
+                  "type": "string"
+                },
+                "market_category": {
+                  "type": "string"
+                },
+                "severity": {
+                  "type": "string"
+                },
+                "companies": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "regions": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "metrics": {
+            "type": "object",
+            "required": [
+              "story_count"
+            ],
+            "properties": {
+              "story_count": {
+                "type": "number"
+              }
+            }
+          },
+          "map_points": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "latitude",
+                "longitude",
+                "entity_name",
+                "signal_type",
+                "severity",
+                "timestamp",
+                "explanation"
+              ],
+              "properties": {
+                "latitude": {
+                  "type": "number"
+                },
+                "longitude": {
+                  "type": "number"
+                },
+                "entity_name": {
+                  "type": "string"
+                },
+                "signal_type": {
+                  "type": "string"
+                },
+                "severity": {
+                  "type": "string"
+                },
+                "timestamp": {
+                  "type": "string"
+                },
+                "explanation": {
+                  "type": "string"
+                },
+                "cluster_key": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "stop_conditions": [
+        "Stop after 5 visible articles are extracted.",
+        "Stop when the first page has been fully parsed and no new article cards remain.",
+        "Stop after two consecutive page parsing failures."
+      ],
+      "error_handling": {
+        "timeout": {
+          "action": "retry",
+          "max_retries": 2,
+          "emit_status": "failed"
+        },
+        "layout_changed": {
+          "action": "store_raw_payload",
+          "emit_status": "failed"
+        },
+        "schema_validation_failed": {
+          "action": "store_raw_payload",
+          "emit_status": "validation_error"
+        }
+      }
+    },
+    {
+      "id": "source-market-reuters-markets",
+      "name": "Reuters Markets",
+      "category": "reputation_intelligence",
+      "company_id": "market-finance",
+      "company_name": "Finance Market",
+      "target_url": "https://www.reuters.com/markets/",
+      "goal": "Visit the public Reuters Markets page and extract up to 5 latest visible finance market articles. Return only finance market signals. For each article, extract title, summary, published timestamp, article URL, signal type, market category, severity, mentioned companies when explicit, and explicit regions when explicit. Do not invent companies or regions.",
+      "browser_profile": "lite",
+      "schedule": {
+        "interval_minutes": 60
+      },
+      "proxy_config": {
+        "enabled": true,
+        "country_code": "US"
+      },
+      "use_vault": false,
+      "credential_item_ids": [],
+      "sector": "finance",
+      "geography": "global",
+      "output_schema": {
+        "type": "object",
+        "required": [
+          "captured_at",
+          "articles",
+          "metrics",
+          "map_points"
+        ],
+        "properties": {
+          "captured_at": {
+            "type": "string"
+          },
+          "articles": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "title",
+                "summary",
+                "published_at",
+                "article_url",
+                "signal_type",
+                "market_category",
+                "severity"
+              ],
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "summary": {
+                  "type": "string"
+                },
+                "published_at": {
+                  "type": "string"
+                },
+                "article_url": {
+                  "type": "string"
+                },
+                "signal_type": {
+                  "type": "string"
+                },
+                "market_category": {
+                  "type": "string"
+                },
+                "severity": {
+                  "type": "string"
+                },
+                "companies": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "regions": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "metrics": {
+            "type": "object",
+            "required": [
+              "story_count"
+            ],
+            "properties": {
+              "story_count": {
+                "type": "number"
+              }
+            }
+          },
+          "map_points": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "latitude",
+                "longitude",
+                "entity_name",
+                "signal_type",
+                "severity",
+                "timestamp",
+                "explanation"
+              ],
+              "properties": {
+                "latitude": {
+                  "type": "number"
+                },
+                "longitude": {
+                  "type": "number"
+                },
+                "entity_name": {
+                  "type": "string"
+                },
+                "signal_type": {
+                  "type": "string"
+                },
+                "severity": {
+                  "type": "string"
+                },
+                "timestamp": {
+                  "type": "string"
+                },
+                "explanation": {
+                  "type": "string"
+                },
+                "cluster_key": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "stop_conditions": [
+        "Stop after 5 visible articles are extracted.",
+        "Stop when the first page has been fully parsed and no new article cards remain.",
+        "Stop after two consecutive page parsing failures."
+      ],
+      "error_handling": {
+        "timeout": {
+          "action": "retry",
+          "max_retries": 2,
+          "emit_status": "failed"
+        },
+        "layout_changed": {
+          "action": "store_raw_payload",
+          "emit_status": "failed"
+        },
+        "schema_validation_failed": {
+          "action": "store_raw_payload",
+          "emit_status": "validation_error"
+        }
+      }
+    },
+    {
+      "id": "source-market-marketwatch-latest",
+      "name": "MarketWatch Latest News",
+      "category": "reputation_intelligence",
+      "company_id": "market-finance",
+      "company_name": "Finance Market",
+      "target_url": "https://www.marketwatch.com/latest-news",
+      "goal": "Visit the public MarketWatch latest news page and extract up to 5 latest visible finance market articles. Return only finance market signals. For each article, extract title, summary, published timestamp, article URL, signal type, market category, severity, mentioned companies when explicit, and explicit regions when explicit. Do not invent companies or regions.",
+      "browser_profile": "lite",
+      "schedule": {
+        "interval_minutes": 60
+      },
+      "proxy_config": {
+        "enabled": true,
+        "country_code": "US"
+      },
+      "use_vault": false,
+      "credential_item_ids": [],
+      "sector": "finance",
+      "geography": "global",
+      "output_schema": {
+        "type": "object",
+        "required": [
+          "captured_at",
+          "articles",
+          "metrics",
+          "map_points"
+        ],
+        "properties": {
+          "captured_at": {
+            "type": "string"
+          },
+          "articles": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "title",
+                "summary",
+                "published_at",
+                "article_url",
+                "signal_type",
+                "market_category",
+                "severity"
+              ],
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "summary": {
+                  "type": "string"
+                },
+                "published_at": {
+                  "type": "string"
+                },
+                "article_url": {
+                  "type": "string"
+                },
+                "signal_type": {
+                  "type": "string"
+                },
+                "market_category": {
+                  "type": "string"
+                },
+                "severity": {
+                  "type": "string"
+                },
+                "companies": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "regions": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "metrics": {
+            "type": "object",
+            "required": [
+              "story_count"
+            ],
+            "properties": {
+              "story_count": {
+                "type": "number"
+              }
+            }
+          },
+          "map_points": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "latitude",
+                "longitude",
+                "entity_name",
+                "signal_type",
+                "severity",
+                "timestamp",
+                "explanation"
+              ],
+              "properties": {
+                "latitude": {
+                  "type": "number"
+                },
+                "longitude": {
+                  "type": "number"
+                },
+                "entity_name": {
+                  "type": "string"
+                },
+                "signal_type": {
+                  "type": "string"
+                },
+                "severity": {
+                  "type": "string"
+                },
+                "timestamp": {
+                  "type": "string"
+                },
+                "explanation": {
+                  "type": "string"
+                },
+                "cluster_key": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "stop_conditions": [
+        "Stop after 5 visible articles are extracted.",
+        "Stop when the first page has been fully parsed and no new article cards remain.",
+        "Stop after two consecutive page parsing failures."
+      ],
+      "error_handling": {
+        "timeout": {
+          "action": "retry",
+          "max_retries": 2,
+          "emit_status": "failed"
+        },
+        "layout_changed": {
+          "action": "store_raw_payload",
           "emit_status": "failed"
         },
         "schema_validation_failed": {

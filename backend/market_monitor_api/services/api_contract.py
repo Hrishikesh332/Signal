@@ -78,7 +78,10 @@ def decode_cursor(value: str | None) -> dict | None:
     normalized = value.strip()
     if not normalized:
         return None
-    payload = json.loads(urlsafe_b64decode(normalized.encode("utf-8")).decode("utf-8"))
+    try:
+        payload = json.loads(urlsafe_b64decode(normalized.encode("utf-8")).decode("utf-8"))
+    except Exception:
+        return None
     if not isinstance(payload, dict):
         return None
     item_id = payload.get("id")

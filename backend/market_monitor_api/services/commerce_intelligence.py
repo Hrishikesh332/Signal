@@ -2,6 +2,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 
 from market_monitor_api.config import Settings
+from market_monitor_api.services.api_contract import build_contract_payload, decode_cursor, paginate_records
 from market_monitor_api.services.openai_service import build_commerce_insight_map
 from market_monitor_api.services.tinyfish import (
     build_source_health,
@@ -47,6 +48,7 @@ class CommerceConfigError(Exception):
 def build_commerce_response(settings: Settings, refresh: bool = False, filters: dict | None = None) -> dict:
     dataset = collect_commerce_dataset(settings, refresh=refresh, filters=filters or {})
     return {
+        "contract": build_contract_payload("commerce_intelligence", view="overview"),
         "meta": build_commerce_meta(settings, dataset, refresh),
         "kpis": build_commerce_kpis(dataset["signals"], dataset["current_listings"], dataset["snapshots"]),
         "signals": dataset["signals"],
@@ -65,9 +67,14 @@ def build_commerce_signals_response(
     filters: dict | None = None,
 ) -> dict:
     dataset = collect_commerce_dataset(settings, refresh=refresh, filters=filters or {})
+    cursor = decode_cursor((filters or {}).get("cursor"))
+    limit = (filters or {}).get("limit", 50)
+    page_signals, pagination = paginate_records(dataset["signals"], cursor, limit)
     return {
+        "contract": build_contract_payload("commerce_intelligence", view="signals"),
         "meta": build_commerce_meta(settings, dataset, refresh),
-        "signals": dataset["signals"],
+        "signals": page_signals,
+        "pagination": pagination,
         "images": dataset["images"],
     }
 
@@ -75,6 +82,7 @@ def build_commerce_signals_response(
 def build_commerce_history_response(settings: Settings, filters: dict | None = None) -> dict:
     dataset = collect_commerce_dataset(settings, refresh=False, filters=filters or {})
     return {
+        "contract": build_contract_payload("commerce_intelligence", view="history"),
         "meta": build_commerce_meta(settings, dataset, False),
         "snapshots": dataset["snapshots"],
         "comparisons": dataset["comparisons"],
@@ -107,6 +115,7 @@ def collect_commerce_dataset(settings: Settings, refresh: bool, filters: dict) -
     raw_signals = build_commerce_signals(filtered_sources, filtered_snapshots, comparisons, current_listings)
     insight_map = build_commerce_insight_map(raw_signals, filtered_snapshots, settings)
     signals = merge_commerce_insights(raw_signals, insight_map, settings)
+    signals = enrich_commerce_signal_provenance(signals, filtered_sources, filtered_snapshots, comparisons)
     time_series = build_commerce_time_series(filtered_snapshots)
     images = build_commerce_images(current_listings)
     source_health = build_source_health(settings, filtered_sources, all_snapshots)
@@ -608,6 +617,68 @@ def merge_commerce_insights(signals: list[dict], insight_map: dict[str, dict], s
     return enriched
 
 
+def enrich_commerce_signal_provenance(
+    signals: list[dict],
+    sources: list[dict],
+    snapshots: list[dict],
+    comparisons: list[dict],
+) -> list[dict]:
+    source_map = {source["id"]: source for source in sources}
+    comparison_map = {comparison["comparison_id"]: comparison for comparison in comparisons}
+    latest_snapshot_by_source = {}
+    for snapshot in sorted(snapshots, key=lambda item: parse_iso_datetime(item["captured_at"])):
+        latest_snapshot_by_source[snapshot["source_id"]] = snapshot
+    enriched = []
+    for signal in signals:
+        comparison = comparison_map.get(extract_commerce_comparison_id(signal["id"]))
+        source = source_map.get(signal["source_id"])
+        latest_snapshot = latest_snapshot_by_source.get(signal["source_id"])
+        provenance = build_commerce_signal_provenance(signal, source, comparison, latest_snapshot)
+        enriched_signal = dict(signal)
+        enriched_signal["provenance"] = provenance
+        enriched_signal["detail_url"] = f"/api/v1/market-signals/{signal['id']}"
+        enriched.append(enriched_signal)
+    return enriched
+
+
+def extract_commerce_comparison_id(signal_id: str) -> str | None:
+    if "::" not in signal_id:
+        return None
+    return signal_id.rsplit("::", 1)[0]
+
+
+def build_commerce_signal_provenance(
+    signal: dict,
+    source: dict | None,
+    comparison: dict | None,
+    latest_snapshot: dict | None,
+) -> dict:
+    snapshot_ids = []
+    extraction_timestamps = []
+    target_urls = []
+    evidence_urls = []
+    file_paths = []
+    if comparison:
+        snapshot_ids.extend([comparison["current_snapshot_id"], comparison["previous_snapshot_id"]])
+        extraction_timestamps.append(comparison["timestamp"])
+    if latest_snapshot:
+        if isinstance(latest_snapshot.get("file_path"), str):
+            file_paths.append(latest_snapshot["file_path"])
+    if source and source.get("target_url"):
+        target_urls.append(source["target_url"])
+    product_url = signal.get("product_url")
+    if isinstance(product_url, str) and product_url.strip():
+        evidence_urls.append(product_url.strip())
+    return {
+        "source_ids": [signal["source_id"]],
+        "snapshot_ids": sorted({snapshot_id for snapshot_id in snapshot_ids if snapshot_id}),
+        "extraction_timestamps": sorted({timestamp for timestamp in extraction_timestamps if timestamp}),
+        "evidence_urls": sorted({url for url in evidence_urls if url}),
+        "target_urls": sorted({url for url in target_urls if url}),
+        "file_paths": sorted({path for path in file_paths if path}),
+    }
+
+
 def build_insight_status(insight: dict | None, settings: Settings) -> str:
     if insight:
         return "completed"
@@ -740,6 +811,7 @@ def build_commerce_meta(settings: Settings, dataset: dict, refresh: bool) -> dic
     return {
         "api_version": "v1",
         "module": "commerce_intelligence",
+        "contract_version": build_contract_payload("commerce_intelligence")["contract_version"],
         "platform": settings.app_name,
         "generated_at": to_iso_timestamp(datetime.now(timezone.utc)),
         "refresh_requested": refresh,

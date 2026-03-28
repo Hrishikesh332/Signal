@@ -113,4 +113,24 @@ def build_growth_filters(args) -> dict:
         value = args.get(key)
         if value:
             filters[key] = value.strip()
+    cursor = args.get("cursor")
+    if cursor and cursor.strip():
+        filters["cursor"] = cursor.strip()
+    limit = args.get("limit")
+    if limit and limit.strip():
+        try:
+            parsed = int(limit.strip())
+        except ValueError as exc:
+            raise GrowthConfigError(
+                "invalid_growth_filter",
+                "Invalid limit filter. limit must be an integer between 1 and 500.",
+                status_code=400,
+            ) from exc
+        if parsed < 1 or parsed > 500:
+            raise GrowthConfigError(
+                "invalid_growth_filter",
+                "Invalid limit filter. limit must be an integer between 1 and 500.",
+                status_code=400,
+            )
+        filters["limit"] = parsed
     return filters

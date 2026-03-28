@@ -1,0 +1,78 @@
+{
+  "endpoint": "/api/v1/growth-intelligence/events?limit=2",
+  "status_code": 200,
+  "ok": true,
+  "response": {
+    "contract": {
+      "contract_version": "2026-03-28",
+      "enums": {
+        "categories": [
+          "commerce_intelligence",
+          "growth_intelligence",
+          "reputation_intelligence"
+        ],
+        "severity": [
+          "critical",
+          "high",
+          "medium",
+          "low"
+        ],
+        "signal_lifecycle_state": [
+          "new",
+          "updated",
+          "resolved",
+          "suppressed",
+          "confirmed"
+        ],
+        "source_health_status": [
+          "healthy",
+          "failed",
+          "validation_error",
+          "not_run"
+        ],
+        "wire_level": [
+          "high",
+          "elevated",
+          "watch"
+        ]
+      },
+      "module": "growth_intelligence",
+      "view": "events"
+    },
+    "events": [],
+    "meta": {
+      "api_version": "v1",
+      "contract_version": "2026-03-28",
+      "filters": {
+        "limit": 2
+      },
+      "generated_at": "2026-03-28T03:55:45Z",
+      "integrations": {
+        "openai": {
+          "base_url": "https://api.openai.com/v1",
+          "configured": true,
+          "model": "gpt-4o-mini",
+          "provider": "OpenAI"
+        },
+        "tinyfish": {
+          "base_url": "https://agent.tinyfish.ai",
+          "configured": true,
+          "provider": "TinyFish"
+        }
+      },
+      "latest_snapshot_at": null,
+      "module": "growth_intelligence",
+      "refresh_requested": false,
+      "snapshot_count": 0,
+      "source_count": 2
+    },
+    "pagination": {
+      "count": 0,
+      "has_more": false,
+      "limit": 2,
+      "next_cursor": null
+    },
+    "signal_clusters": [],
+    "strategic_insights": []
+  }
+}
