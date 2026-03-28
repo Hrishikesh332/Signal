@@ -44,6 +44,7 @@ instance/
 # Node / Next.js (frontend)
 node_modules/
 .next/
+*.tsbuildinfo
 
 # OS / editor
 .DS_Store

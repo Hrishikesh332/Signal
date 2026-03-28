@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 import hashlib
 import socket
+import time
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 import json
@@ -17,6 +18,8 @@ VALID_SOURCE_CATEGORIES = {
 }
 
 VALID_TINYFISH_BROWSER_PROFILES = {"lite", "stealth"}
+TINYFISH_PENDING_STATUSES = {"PENDING", "QUEUED", "RUNNING", "STARTING", "IN_PROGRESS"}
+TINYFISH_TERMINAL_STATUSES = {"COMPLETED", "FAILED", "CANCELLED"}
 
 
 def load_source_catalog(settings: Settings) -> list[dict]:
@@ -148,6 +151,44 @@ def run_tinyfish_source(settings: Settings, source: dict) -> dict:
         )
 
 
+def run_ad_hoc_tinyfish_research(settings: Settings, research_spec: dict) -> dict:
+    run_response = run_tinyfish_ad_hoc_research(settings, research_spec)
+    result = run_response.get("result")
+    validation_errors = []
+    status = run_response.get("status", "FAILED")
+    if status == "COMPLETED" and isinstance(result, dict):
+        validation_errors = validate_result_against_schema(research_spec["output_schema"], result)
+        if validation_errors:
+            status = "VALIDATION_ERROR"
+    return {
+        "lane": research_spec.get("lane", "standard"),
+        "status": status,
+        "captured_at": run_response.get("finished_at") or run_response.get("started_at"),
+        "result": result if isinstance(result, dict) else None,
+        "error": build_ad_hoc_tinyfish_error(status, run_response.get("error"), validation_errors),
+    }
+
+
+def run_tinyfish_ad_hoc_research(settings: Settings, source: dict) -> dict:
+    request_body = build_tinyfish_request_body(source)
+    run_response = start_tinyfish_async_run(settings, request_body)
+    run_id = str(run_response.get("run_id") or "").strip()
+    status = normalize_tinyfish_status(run_response.get("status"))
+
+    if not run_id:
+        if status in TINYFISH_TERMINAL_STATUSES:
+            return run_response
+        return build_failed_run_response(
+            error_code="missing_run_id",
+            error_message="TinyFish did not return a run ID for ad hoc research.",
+        )
+
+    if status in TINYFISH_TERMINAL_STATUSES and run_response.get("result") is not None:
+        return run_response
+
+    return wait_for_tinyfish_run(settings, run_id, initial_response=run_response)
+
+
 def build_tinyfish_request_body(source: dict) -> dict:
     request_body = {
         "url": source["target_url"],
@@ -161,6 +202,108 @@ def build_tinyfish_request_body(source: dict) -> dict:
     if source.get("credential_item_ids"):
         request_body["credential_item_ids"] = source["credential_item_ids"]
     return request_body
+
+
+def start_tinyfish_async_run(settings: Settings, request_body: dict) -> dict:
+    request_url = f"{settings.tinyfish_base_url.rstrip('/')}/v1/automation/run-async"
+    return perform_tinyfish_json_request(settings, request_url, request_body)
+
+
+def wait_for_tinyfish_run(settings: Settings, run_id: str, initial_response: dict | None = None) -> dict:
+    deadline = time.monotonic() + max(settings.tinyfish_timeout_seconds, 1)
+    last_response = initial_response or {"run_id": run_id, "status": "QUEUED"}
+
+    while time.monotonic() < deadline:
+        current_status = normalize_tinyfish_status(last_response.get("status"))
+        if current_status in TINYFISH_TERMINAL_STATUSES:
+            return last_response
+
+        poll_response = fetch_tinyfish_run(settings, run_id)
+        if poll_response.get("run_id"):
+            last_response = poll_response
+        current_status = normalize_tinyfish_status(last_response.get("status"))
+        if current_status in TINYFISH_TERMINAL_STATUSES:
+            return last_response
+        time.sleep(2)
+
+    if last_response.get("result") is not None:
+        return last_response
+    return build_in_progress_run_response(
+        run_id,
+        last_response,
+        error_code="still_running",
+        error_message=(
+            f"TinyFish run {run_id} is still {normalize_tinyfish_status(last_response.get('status')) or 'PENDING'} "
+            f"after waiting {settings.tinyfish_timeout_seconds} seconds."
+        ),
+    )
+
+
+def fetch_tinyfish_run(settings: Settings, run_id: str) -> dict:
+    request_url = f"{settings.tinyfish_base_url.rstrip('/')}/v1/runs/batch"
+    payload = {"run_ids": [run_id]}
+    response_payload = perform_tinyfish_json_request(settings, request_url, payload)
+    if not isinstance(response_payload, dict):
+        return build_failed_run_response("invalid_response", "TinyFish returned an invalid run lookup response.")
+    runs = response_payload.get("data")
+    if isinstance(runs, list) and runs:
+        run_payload = runs[0]
+        if isinstance(run_payload, dict):
+            return run_payload
+    not_found = response_payload.get("not_found")
+    if isinstance(not_found, list) and run_id in not_found:
+        return build_failed_run_response("run_not_found", f"TinyFish run {run_id} was not found.")
+    return build_failed_run_response("invalid_response", "TinyFish did not return run data for the requested run ID.")
+
+
+def perform_tinyfish_json_request(settings: Settings, request_url: str, request_body: dict) -> dict:
+    request = Request(
+        request_url,
+        data=json.dumps(request_body).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "X-API-Key": settings.tinyfish_api_key,
+        },
+        method="POST",
+    )
+    try:
+        with urlopen(request, timeout=settings.tinyfish_timeout_seconds) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except HTTPError as exc:
+        return build_failed_run_response(
+            error_code=f"http_{exc.code}",
+            error_message=read_error_message(exc),
+        )
+    except (TimeoutError, socket.timeout) as exc:
+        return build_failed_run_response(
+            error_code="timeout",
+            error_message=str(exc) or "TinyFish request timed out.",
+        )
+    except URLError as exc:
+        return build_failed_run_response(
+            error_code="network_error",
+            error_message=str(exc.reason),
+        )
+
+
+def normalize_tinyfish_status(value) -> str:
+    return str(value or "").strip().upper()
+
+
+def build_in_progress_run_response(run_id: str, last_response: dict | None, error_code: str, error_message: str) -> dict:
+    last_response = last_response or {}
+    return {
+        "run_id": run_id,
+        "status": normalize_tinyfish_status(last_response.get("status")) or "PENDING",
+        "started_at": last_response.get("started_at"),
+        "finished_at": last_response.get("finished_at"),
+        "num_of_steps": last_response.get("num_of_steps"),
+        "result": last_response.get("result") if isinstance(last_response.get("result"), dict) else None,
+        "error": {
+            "code": error_code,
+            "message": error_message,
+        },
+    }
 
 
 def build_failed_run_response(error_code: str, error_message: str) -> dict:
@@ -177,6 +320,18 @@ def build_failed_run_response(error_code: str, error_message: str) -> dict:
             "message": error_message,
         },
     }
+
+
+def build_ad_hoc_tinyfish_error(status: str, error: dict | None, validation_errors: list[dict]) -> dict | None:
+    if status == "VALIDATION_ERROR":
+        return {
+            "code": "validation_error",
+            "message": "TinyFish returned a payload that did not match the expected schema.",
+            "details": validation_errors,
+        }
+    if isinstance(error, dict):
+        return error
+    return None
 
 
 def read_error_message(error: HTTPError) -> str:

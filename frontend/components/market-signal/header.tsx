@@ -1,14 +1,21 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Globe2, Radio, LayoutDashboard, Users2 } from "lucide-react"
 
 export function Header() {
   const pathname = usePathname()
-  const isCompetitors = pathname === "/competitors"
-  const isDashboard = pathname === "/dashboard"
-  const isLatest = pathname === "/latest" || pathname === "/"
+  const [isHydrated, setIsHydrated] = useState(false)
+
+  useEffect(() => {
+    setIsHydrated(true)
+  }, [])
+
+  const isCompetitors = isHydrated && pathname === "/competitors"
+  const isDashboard = isHydrated && pathname === "/dashboard"
+  const isLatest = isHydrated && (pathname === "/latest" || pathname === "/")
 
   return (
     <header className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-6 h-14 bg-[#09090b]/80 backdrop-blur-md border-b border-[#27272a]/50">
