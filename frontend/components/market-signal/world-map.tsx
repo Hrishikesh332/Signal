@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react"
 import L from "leaflet"
+
+import { fetchAppApi } from "@/lib/fetch-app"
 import "leaflet/dist/leaflet.css"
 
 type Severity = "low" | "medium" | "high" | "critical"
@@ -61,7 +63,7 @@ function escapeHtml(text: string): string {
 }
 
 async function fetchDashboardMapPoints(): Promise<DashboardMapPoint[]> {
-  const response = await fetch("/api/dashboard", { cache: "no-store" })
+  const response = await fetchAppApi("/api/dashboard", { cache: "no-store" })
   const payload = (await response.json()) as { map?: { points?: DashboardMapPoint[] }; error?: { message?: string } }
   if (!response.ok) {
     const message = "error" in payload ? payload.error?.message : "Unable to load dashboard data."

@@ -10,7 +10,7 @@
       "goal": "Visit the public TechCrunch AI tag page and extract up to 5 latest visible tech market articles. Return only tech market signals. For each article, extract title, summary, published timestamp, article URL, signal type, market category, severity, mentioned companies when explicit, and explicit regions when explicit. Do not invent companies or regions.",
       "browser_profile": "lite",
       "schedule": {
-        "interval_minutes": 60
+        "interval_minutes": 360
       },
       "proxy_config": {
         "enabled": true,
@@ -167,7 +167,7 @@
       "goal": "Visit the public Hacker News front page and extract up to 5 latest visible tech market stories. Return only tech market signals. For each story, extract title, summary or a concise factual description from visible text, published timestamp when explicit or the page capture time when not explicit, article URL, signal type, market category, severity, mentioned companies when explicit, and explicit regions when explicit. Do not invent companies or regions.",
       "browser_profile": "lite",
       "schedule": {
-        "interval_minutes": 60
+        "interval_minutes": 360
       },
       "proxy_config": {
         "enabled": true,
@@ -324,7 +324,7 @@
       "goal": "Visit the public VentureBeat AI page and extract up to 5 latest visible tech market articles. Return only tech market signals. For each article, extract title, summary, published timestamp, article URL, signal type, market category, severity, mentioned companies when explicit, and explicit regions when explicit. Do not invent companies or regions.",
       "browser_profile": "lite",
       "schedule": {
-        "interval_minutes": 60
+        "interval_minutes": 360
       },
       "proxy_config": {
         "enabled": true,
@@ -481,7 +481,7 @@
       "goal": "Visit the public Reuters Technology page and extract up to 5 latest visible tech market articles. Return only tech market signals. For each article, extract title, summary, published timestamp, article URL, signal type, market category, severity, mentioned companies when explicit, and explicit regions when explicit. Do not invent companies or regions.",
       "browser_profile": "lite",
       "schedule": {
-        "interval_minutes": 60
+        "interval_minutes": 360
       },
       "proxy_config": {
         "enabled": true,
@@ -638,7 +638,7 @@
       "goal": "Visit the public TechCrunch Fintech tag page and extract up to 5 latest visible finance market articles. Return only finance market signals. For each article, extract title, summary, published timestamp, article URL, signal type, market category, severity, mentioned companies when explicit, and explicit regions when explicit. Do not invent companies or regions.",
       "browser_profile": "lite",
       "schedule": {
-        "interval_minutes": 60
+        "interval_minutes": 360
       },
       "proxy_config": {
         "enabled": true,
@@ -795,7 +795,7 @@
       "goal": "Visit the public Finextra news page and extract up to 5 latest visible finance market articles. Return only finance market signals. For each article, extract title, summary, published timestamp, article URL, signal type, market category, severity, mentioned companies when explicit, and explicit regions when explicit. Do not invent companies or regions.",
       "browser_profile": "lite",
       "schedule": {
-        "interval_minutes": 60
+        "interval_minutes": 360
       },
       "proxy_config": {
         "enabled": true,
@@ -952,7 +952,7 @@
       "goal": "Visit the public Reuters Markets page and extract up to 5 latest visible finance market articles. Return only finance market signals. For each article, extract title, summary, published timestamp, article URL, signal type, market category, severity, mentioned companies when explicit, and explicit regions when explicit. Do not invent companies or regions.",
       "browser_profile": "lite",
       "schedule": {
-        "interval_minutes": 60
+        "interval_minutes": 360
       },
       "proxy_config": {
         "enabled": true,
@@ -1109,7 +1109,7 @@
       "goal": "Visit the public MarketWatch latest news page and extract up to 5 latest visible finance market articles. Return only finance market signals. For each article, extract title, summary, published timestamp, article URL, signal type, market category, severity, mentioned companies when explicit, and explicit regions when explicit. Do not invent companies or regions.",
       "browser_profile": "lite",
       "schedule": {
-        "interval_minutes": 60
+        "interval_minutes": 360
       },
       "proxy_config": {
         "enabled": true,

@@ -11,6 +11,8 @@ import {
   Tags,
 } from "lucide-react"
 
+import { fetchAppApi } from "@/lib/fetch-app"
+
 type MarketTopic = "all" | "tech" | "finance"
 
 type WireItem = {
@@ -155,7 +157,7 @@ async function fetchMarketSignals(topic: MarketTopic, refresh: boolean) {
   params.set("limit", "25")
   if (topic !== "all") params.set("market_category", topic)
   if (refresh) params.set("refresh", "true")
-  const response = await fetch(`/api/market-signals?${params.toString()}`, {
+  const response = await fetchAppApi(`/api/market-signals?${params.toString()}`, {
     cache: "no-store",
   })
   const payload = (await response.json()) as MarketSignalsResponse | { error?: { message?: string } }

@@ -9,6 +9,7 @@ class Settings:
     app_name: str
     source_config_file: str
     snapshot_store_dir: str
+    source_run_store_dir: str
     tinyfish_base_url: str
     tinyfish_api_key: str
     tinyfish_timeout_seconds: int
@@ -76,6 +77,10 @@ def get_settings(project_root: Path | None = None) -> Settings:
         snapshot_store_dir=os.environ.get(
             "MARKET_MONITOR_SNAPSHOT_STORE_DIR",
             "backend/data/snapshots",
+        ).strip(),
+        source_run_store_dir=os.environ.get(
+            "MARKET_MONITOR_SOURCE_RUN_STORE_DIR",
+            "backend/data/source_runs",
         ).strip(),
         tinyfish_base_url=os.environ.get("TINYFISH_BASE_URL", "https://agent.tinyfish.ai").strip(),
         tinyfish_api_key=os.environ.get("TINYFISH_API_KEY", "").strip(),

@@ -5,7 +5,6 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'Market Signal | Global Monitoring Dashboard',
   description: 'Real-time global market and event monitoring system',
-  generator: 'v0.app',
   icons: {
     icon: [
       {
@@ -15,10 +14,6 @@ export const metadata: Metadata = {
       {
         url: '/icon-dark-32x32.png',
         media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
       },
     ],
     apple: '/apple-icon.png',

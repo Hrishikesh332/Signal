@@ -84,13 +84,16 @@ def build_meta(settings: Settings, sources: list[dict], snapshots: list[dict], r
         "refresh_requested": refresh,
         "source_config_file": settings.source_config_file,
         "snapshot_store_dir": settings.snapshot_store_dir,
+        "source_run_store_dir": settings.source_run_store_dir,
         "source_count": len(sources),
         "snapshot_count": len(snapshots),
         "latest_snapshot_at": latest_snapshot_at,
         "snapshot_strategy": {
-            "mode": "append_only",
+            "mode": "change_only",
             "timestamp_field": "captured_at",
             "comparison_windows": ["previous_snapshot", "historical_store"],
+            "deduplication_key": "source_id + content_fingerprint",
+            "unchanged_runs": "stored_as_source_runs_only",
         },
         "integrations": {
             "tinyfish": {
