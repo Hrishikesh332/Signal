@@ -1,13 +1,6 @@
 import type { Metadata } from 'next'
-import { Space_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
-
-const spaceMono = Space_Mono({ 
-  weight: ['400', '700'],
-  subsets: ["latin"],
-  variable: '--font-mono'
-});
 
 export const metadata: Metadata = {
   title: 'Market Signal | Global Monitoring Dashboard',
@@ -39,7 +32,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${spaceMono.variable} font-mono antialiased`}>
+      <body className="font-mono antialiased">
         {children}
         <Analytics />
       </body>
