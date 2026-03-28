@@ -80,6 +80,15 @@ def get_settings(project_root: Path | None = None) -> Settings:
             "MARKET_MONITOR_SNAPSHOT_STORE_DIR",
             "backend/data/snapshots",
         ).strip(),
+        source_run_store_dir=os.environ.get(
+            "MARKET_MONITOR_SOURCE_RUN_STORE_DIR",
+            "backend/data/source_runs",
+        ).strip(),
+        product_viability_max_images=get_env_int("PRODUCT_VIABILITY_MAX_IMAGES", 4),
+        product_viability_max_image_bytes=get_env_int(
+            "PRODUCT_VIABILITY_MAX_IMAGE_BYTES",
+            5 * 1024 * 1024,
+        ),
         tinyfish_base_url=os.environ.get("TINYFISH_BASE_URL", "https://agent.tinyfish.ai").strip(),
         tinyfish_api_key=os.environ.get("TINYFISH_API_KEY", "").strip(),
         tinyfish_timeout_seconds=get_env_int("TINYFISH_TIMEOUT_SECONDS", 30),

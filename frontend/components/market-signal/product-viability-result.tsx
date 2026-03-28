@@ -38,6 +38,10 @@ export interface ProductViabilityResponse {
     decision_status?: string
     openai_status?: string
     used_local_context?: boolean
+    research_error?: {
+      code?: string
+      message?: string
+    } | null
   }
 }
 
@@ -105,6 +109,10 @@ export function ProductViabilityResult({
 
   const recommendation = normalizeRecommendationLabel(result.recommendation)
   const recommendationTone = recommendationToneClass(result.recommendation)
+  const researchFailureMessage =
+    result.status === "failed"
+      ? result.meta.research_error?.message || "TinyFish could not complete the live market research for this request."
+      : null
 
   return (
     <section className="relative overflow-hidden rounded-[28px] border border-[#202024] bg-[#0b0b0d]/92 shadow-[0_40px_120px_rgba(0,0,0,0.45)]">
@@ -140,6 +148,14 @@ export function ProductViabilityResult({
             <AlertDescription>
               TinyFish has not finished collecting market evidence yet. The current response is intentionally incomplete.
             </AlertDescription>
+          </Alert>
+        ) : null}
+
+        {researchFailureMessage ? (
+          <Alert className="mt-5 border-[#5f2328] bg-[#160d0e] text-[#fecaca]">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Research hit a live-market issue</AlertTitle>
+            <AlertDescription>{researchFailureMessage}</AlertDescription>
           </Alert>
         ) : null}
       </div>

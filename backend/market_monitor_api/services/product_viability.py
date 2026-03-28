@@ -248,6 +248,7 @@ def resolve_image_mime_type(storage) -> str:
 def build_product_viability_response(settings: Settings, payload: ProductViabilityInput) -> dict:
     live_market_research = build_product_viability_live_research(settings, payload)
     local_signal_context = build_product_viability_enrichment(settings, payload)
+    research_error = extract_live_research_error(live_market_research)
     evidence_context = {
         "used_live_research": True,
         "live_market_research": live_market_research,
@@ -268,6 +269,7 @@ def build_product_viability_response(settings: Settings, payload: ProductViabili
         "decision_status": decision_status,
         "openai_status": openai_status,
         "used_local_context": local_signal_context["used_local_context"],
+        "research_error": research_error,
     }
     internal_response = {
         "meta": {
@@ -301,7 +303,7 @@ def build_product_viability_response(settings: Settings, payload: ProductViabili
 
 def build_frontend_product_viability_response(meta: dict, live_market_research: dict, decision_memo: dict | None) -> dict:
     return {
-        "status": meta["decision_status"] if meta["decision_status"] == "pending" else meta["research_status"],
+        "status": build_frontend_response_status(meta, decision_memo),
         "summary": build_frontend_summary(live_market_research, decision_memo),
         "recommendation": decision_memo.get("recommendation") if decision_memo else None,
         "viability_score": decision_memo.get("viability_score") if decision_memo else None,
@@ -320,6 +322,16 @@ def build_frontend_product_viability_response(meta: dict, live_market_research: 
     }
 
 
+def build_frontend_response_status(meta: dict, decision_memo: dict | None) -> str:
+    if meta["decision_status"] == "pending":
+        return "pending"
+    if meta["decision_status"] == "failed":
+        return "failed"
+    if decision_memo:
+        return "completed"
+    return meta["research_status"]
+
+
 def build_frontend_summary(live_market_research: dict, decision_memo: dict | None) -> str:
     if decision_memo and decision_memo.get("summary"):
         return decision_memo["summary"]
@@ -327,6 +339,11 @@ def build_frontend_summary(live_market_research: dict, decision_memo: dict | Non
         return live_market_research["summary"]
     if live_market_research["status"] == "pending":
         return "TinyFish research is still running."
+    error = extract_live_research_error(live_market_research)
+    if error and error.get("message"):
+        return error["message"]
+    if live_market_research["status"] == "failed":
+        return "TinyFish research could not be completed for this request."
     return "No product viability summary is available yet."
 
 
@@ -367,6 +384,8 @@ def build_product_viability_decision_memo(
 ) -> tuple[dict | None, str | None, str, str]:
     if live_market_research["status"] == "pending" and not has_live_research_evidence(live_market_research):
         return None, None, "skipped", "pending"
+    if live_market_research["status"] == "failed" and not has_live_research_evidence(live_market_research):
+        return None, None, "skipped", "failed"
 
     if should_run_openai_analysis(settings, payload):
         try:
@@ -575,10 +594,16 @@ def build_product_viability_live_research(settings: Settings, payload: ProductVi
         live_market_research = aggregate_live_market_research(run_deep_tinyfish_research(settings, payload))
 
     if live_market_research["status"] == "failed":
-        raise ProductViabilityError(
-            "tinyfish_research_unavailable",
-            "TinyFish research is unavailable for this request.",
-            503,
+        LOGGER.warning(
+            "product_viability_live_research_failed=%s",
+            json.dumps(
+                {
+                    "input_echo": build_input_echo(payload),
+                    "lane_reports": live_market_research["lane_reports"],
+                },
+                separators=(",", ":"),
+                ensure_ascii=True,
+            ),
         )
     return live_market_research
 
@@ -860,6 +885,25 @@ def aggregate_live_market_research(lane_results: list[dict]) -> dict:
         "source_citations": deduped_citations,
         "lane_reports": lane_reports,
     }
+
+
+def extract_live_research_error(live_market_research: dict) -> dict | None:
+    lane_reports = live_market_research.get("lane_reports")
+    if not isinstance(lane_reports, list):
+        return None
+    for lane_report in lane_reports:
+        if not isinstance(lane_report, dict):
+            continue
+        error = lane_report.get("error")
+        if not isinstance(error, dict):
+            continue
+        code = normalize_text(error.get("code")) or "tinyfish_research_unavailable"
+        message = normalize_text(error.get("message")) or "TinyFish research is unavailable for this request."
+        payload = {"code": code, "message": message}
+        if "details" in error:
+            payload["details"] = error["details"]
+        return payload
+    return None
 
 
 def determine_live_research_lane_status(raw_status: str, normalized_result: dict) -> str:

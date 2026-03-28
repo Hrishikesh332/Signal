@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+from io import BytesIO
 import json
 import mimetypes
 import os
@@ -16,7 +17,8 @@ BACKEND_ROOT = REPO_ROOT / "backend"
 if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
-from market_monitor_api.config import load_env_file  # noqa: E402
+from market_monitor_api import create_app  # noqa: E402
+from market_monitor_api.config import get_settings, load_env_file  # noqa: E402
 
 
 DEFAULT_SAMPLE_REQUEST = {
@@ -27,6 +29,7 @@ DEFAULT_SAMPLE_REQUEST = {
     ),
     "research_depth": "standard",
 }
+MISSING_ENV_VALUE = object()
 
 
 def main() -> int:
@@ -50,11 +53,21 @@ def main() -> int:
         return 1
 
     args = apply_default_request_values(args)
-    args.timeout_seconds = resolve_timeout_seconds(args.timeout_seconds)
     print_request_summary(args)
 
     request_fields = build_request_fields(args)
     request_files = build_request_files(args.image)
+    if args.transport == "test-client":
+        return run_test_client_request(args, request_fields, request_files)
+    return run_http_request(args, request_fields, request_files)
+
+
+def run_http_request(
+    args,
+    request_fields: list[tuple[str, str]],
+    request_files: list[tuple[str, str, bytes, str]],
+) -> int:
+    timeout_seconds = resolve_timeout_seconds(args.timeout_seconds)
     body, content_type = encode_multipart_formdata(request_fields, request_files)
 
     request = Request(
@@ -64,10 +77,10 @@ def main() -> int:
         method="POST",
     )
     try:
-        with urlopen(request, timeout=args.timeout_seconds) as response:
+        with urlopen(request, timeout=timeout_seconds) as response:
             payload = json.loads(response.read().decode("utf-8"))
             print(json.dumps(payload, indent=2))
-            return 0
+            return exit_code_for_payload(payload)
     except HTTPError as exc:
         payload = read_error_payload(exc)
         print(json.dumps(payload, indent=2))
@@ -92,7 +105,7 @@ def main() -> int:
                     "error": "client_timeout",
                     "message": (
                         "The smoke test client timed out while waiting for the backend response. "
-                        f"Current timeout: {args.timeout_seconds} seconds."
+                        f"Current timeout: {timeout_seconds} seconds."
                     ),
                 },
                 indent=2,
@@ -101,9 +114,93 @@ def main() -> int:
         return 1
 
 
+def run_test_client_request(
+    args,
+    request_fields: list[tuple[str, str]],
+    request_files: list[tuple[str, str, bytes, str]],
+) -> int:
+    overridden_env = {}
+    try:
+        apply_timeout_override("TINYFISH_TIMEOUT_SECONDS", args.tinyfish_timeout_seconds, overridden_env)
+        apply_timeout_override("OPENAI_TIMEOUT_SECONDS", args.openai_timeout_seconds, overridden_env)
+        get_settings.cache_clear()
+
+        app = create_app()
+        app.config["TESTING"] = True
+        response = app.test_client().post(
+            "/api/v1/product-viability",
+            data=build_test_client_payload(request_fields, request_files),
+            content_type="multipart/form-data",
+        )
+        payload = response.get_json(silent=True)
+        if payload is None:
+            payload = {
+                "ok": False,
+                "error": "invalid_response",
+                "status": response.status_code,
+                "message": "The Flask test client did not return JSON.",
+            }
+        print(json.dumps(payload, indent=2))
+        if response.status_code >= 400:
+            return 1
+        return exit_code_for_payload(payload)
+    finally:
+        restore_env_overrides(overridden_env)
+        get_settings.cache_clear()
+
+
+def apply_timeout_override(name: str, value: int, overridden_env: dict[str, object]) -> None:
+    if value <= 0:
+        return
+    if name not in overridden_env:
+        overridden_env[name] = os.environ.get(name, MISSING_ENV_VALUE)
+    os.environ[name] = str(value)
+
+
+def restore_env_overrides(overridden_env: dict[str, object]) -> None:
+    for name, original_value in overridden_env.items():
+        if original_value is MISSING_ENV_VALUE:
+            os.environ.pop(name, None)
+        else:
+            os.environ[name] = str(original_value)
+
+
+def build_test_client_payload(
+    fields: list[tuple[str, str]],
+    files: list[tuple[str, str, bytes, str]],
+) -> dict:
+    payload = {name: value for name, value in fields}
+    grouped_uploads: dict[str, list[tuple[BytesIO, str, str]]] = {}
+
+    for field_name, filename, content, mime_type in files:
+        grouped_uploads.setdefault(field_name, []).append((BytesIO(content), filename, mime_type))
+
+    for field_name, uploads in grouped_uploads.items():
+        payload[field_name] = uploads[0] if len(uploads) == 1 else uploads
+    return payload
+
+
+def exit_code_for_payload(payload: dict) -> int:
+    meta = payload.get("meta")
+    if not isinstance(meta, dict):
+        return 0
+    if str(meta.get("research_status") or "").lower() == "failed":
+        return 1
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Send a real multipart smoke-test request to /api/v1/product-viability.",
+    )
+    parser.add_argument(
+        "--transport",
+        choices=["http", "test-client"],
+        default="http",
+        help=(
+            "How to send the request. Use 'http' for a running backend or 'test-client' to "
+            "exercise the Flask route in-process. Default: http"
+        ),
     )
     parser.add_argument(
         "--url",
@@ -134,6 +231,18 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=0,
         help="HTTP timeout in seconds. Default: derived from .env TinyFish/OpenAI timeouts.",
+    )
+    parser.add_argument(
+        "--tinyfish-timeout-seconds",
+        type=int,
+        default=0,
+        help="Override TinyFish timeout for --transport test-client only.",
+    )
+    parser.add_argument(
+        "--openai-timeout-seconds",
+        type=int,
+        default=0,
+        help="Override OpenAI timeout for --transport test-client only.",
     )
     parser.add_argument(
         "--no-defaults",
@@ -170,7 +279,8 @@ def build_request_fields(args) -> list[tuple[str, str]]:
 
 def print_request_summary(args) -> None:
     summary = {
-        "url": args.url,
+        "transport": args.transport,
+        "url": args.url if args.transport == "http" else None,
         "query": args.query or None,
         "product_name": args.product_name,
         "research_depth": args.research_depth,
@@ -178,7 +288,9 @@ def print_request_summary(args) -> None:
         "price_point": args.price_point or None,
         "target_customer": args.target_customer or None,
         "image_count": len(args.image),
-        "timeout_seconds": args.timeout_seconds,
+        "timeout_seconds": resolve_timeout_seconds(args.timeout_seconds) if args.transport == "http" else None,
+        "tinyfish_timeout_seconds_override": args.tinyfish_timeout_seconds or None,
+        "openai_timeout_seconds_override": args.openai_timeout_seconds or None,
         "using_default_payload": not args.no_defaults,
     }
     print(json.dumps({"request": summary}, indent=2))

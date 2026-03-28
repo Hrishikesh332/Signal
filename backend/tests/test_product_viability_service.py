@@ -361,7 +361,7 @@ class ProductViabilityServiceTests(unittest.TestCase):
         self.assertEqual(research["status"], "partial")
         self.assertEqual(len(research["lane_reports"]), 3)
 
-    def test_deep_live_research_raises_when_all_lanes_fail(self):
+    def test_deep_live_research_returns_failed_state_when_all_lanes_fail(self):
         settings = build_settings(Path(tempfile.mkdtemp()))
         payload = ProductViabilityInput(
             natural_language_input="Is there demand for a portable espresso device for travelers?",
@@ -382,9 +382,16 @@ class ProductViabilityServiceTests(unittest.TestCase):
                 {"lane": "pricing", "status": "FAILED", "result": None, "error": {"code": "timeout", "message": "Timed out"}},
                 {"lane": "demand", "status": "FAILED", "result": None, "error": {"code": "timeout", "message": "Timed out"}},
             ],
-        ):
-            with self.assertRaises(ProductViabilityError):
-                build_product_viability_live_research(settings, payload)
+        ) as mock_run, patch(
+            "market_monitor_api.services.product_viability.LOGGER.warning",
+        ) as mock_warning:
+            research = build_product_viability_live_research(settings, payload)
+
+        self.assertEqual(mock_run.call_count, 3)
+        self.assertEqual(research["status"], "failed")
+        self.assertEqual(len(research["lane_reports"]), 3)
+        self.assertTrue(all(lane["status"] == "failed" for lane in research["lane_statuses"]))
+        mock_warning.assert_called_once()
 
     def test_standard_live_research_returns_pending_when_tinyfish_is_still_running(self):
         settings = build_settings(Path(tempfile.mkdtemp()))
@@ -473,6 +480,65 @@ class ProductViabilityServiceTests(unittest.TestCase):
         self.assertEqual(response["competitors"][0]["name"], "Wacaco Nanopresso")
         self.assertEqual(response["sources"][0]["title"], "Portable Espresso Guide")
         self.assertIn("tinyfish_live_research", mock_logger.call_args[0][1])
+
+    def test_build_product_viability_response_returns_failed_frontend_payload_when_research_fails(self):
+        settings = build_settings(Path(tempfile.mkdtemp()), include_openai=False)
+        payload = ProductViabilityInput(
+            natural_language_input="Would a portable espresso maker for campers be viable?",
+            product_name="Pocket Brewer",
+            description="Portable espresso maker for travelers and campers",
+            category="consumer hardware",
+            price_point="$79",
+            target_customer="travelers",
+            market_context="",
+            research_depth="standard",
+            images=[],
+        )
+        live_market_research = {
+            "status": "failed",
+            "lane_statuses": [{"lane": "standard", "status": "failed"}],
+            "summary": "",
+            "competitors": [],
+            "pricing_landscape": [],
+            "demand_signals": [],
+            "risks": [],
+            "source_citations": [],
+            "lane_reports": [
+                {
+                    "lane": "standard",
+                    "status": "failed",
+                    "summary": None,
+                    "competitors_count": 0,
+                    "pricing_points_count": 0,
+                    "demand_signals_count": 0,
+                    "risks_count": 0,
+                    "citations_count": 0,
+                    "error": {"code": "timeout", "message": "TinyFish run timed out."},
+                }
+            ],
+        }
+        local_signal_context = {
+            "matched_entities": {"companies": [], "products": []},
+            "related_signal_context": {"growth_events_count": 0, "commerce_signals_count": 0, "growth_events": [], "commerce_signals": []},
+            "used_local_context": False,
+        }
+
+        with patch(
+            "market_monitor_api.services.product_viability.build_product_viability_live_research",
+            return_value=live_market_research,
+        ), patch(
+            "market_monitor_api.services.product_viability.build_product_viability_enrichment",
+            return_value=local_signal_context,
+        ), patch(
+            "market_monitor_api.services.product_viability.LOGGER.info",
+        ):
+            response = build_product_viability_response(settings, payload)
+
+        self.assertEqual(response["status"], "failed")
+        self.assertEqual(response["summary"], "TinyFish run timed out.")
+        self.assertIsNone(response["recommendation"])
+        self.assertEqual(response["meta"]["decision_status"], "failed")
+        self.assertEqual(response["meta"]["research_error"]["code"], "timeout")
 
     def test_build_product_viability_response_falls_back_when_openai_fails(self):
         settings = build_settings(Path(tempfile.mkdtemp()))
